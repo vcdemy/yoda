@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Image Labeling Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            cursor: crosshair;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+        #image-container {
+            margin: 20px auto;
+            max-width: 90%;
+        }
+        #output {
+            margin-top: 20px;
+        }
+        .class-management, .file-management {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 0 auto 20px;
+            max-width: 800px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .class-list, .image-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .class-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        .class-input input[type="text"] {
+            width: 200px;
+        }
+        .class-item, .image-item {
+            margin: 5px auto;
+            max-width: 700px;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 左側面板 */
+        .left-panel {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-sizing: border-box; /* 確保 padding 不會增加寬度 */
+        }
+
+        /* 中間編輯區 */
+        .center-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* 右側面板 */
+        .right-panel {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        #image-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .image-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .image-item.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+        }
+
+        .image-item .image-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #annotations {
+            width: 100%;
+            flex: 1;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: none;
+            white-space: nowrap;  /* 防止文字換行 */
+            overflow-x: auto;     /* 允許水平捲動 */
+            overflow-y: auto;     /* 允許垂直捲動 */
+        }
+
+        /* 美化按鈕 */
+        .action-btn {
+            padding: 4px 8px;
+            margin-left: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .edit-btn { background-color: #4CAF50; }
+        .delete-btn { background-color: #f44336; }
+        .load-btn { background-color: #2196F3; }
+
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* 面板基本樣式 */
+        .left-panel, .right-panel {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 面板區塊樣式 */
+        .panel-section {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* 控制按鈕區域 */
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        #controls .action-btn {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* 標註文本區域 */
+        #annotations {
+            width: 100%;
+            flex: 1;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: none;
+            white-space: nowrap;  /* 防止文字換行 */
+            overflow-x: auto;     /* 允許水平捲動 */
+            overflow-y: auto;     /* 允許垂直捲動 */
+        }
+
+        /* 類別輸入區域 */
+        .class-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .class-input input[type="text"] {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .class-input input[type="color"] {
+            width: 40px;
+            padding: 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* 列表樣式 */
+        .class-list, .image-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        /* 按鈕樣式 */
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            background-color: #2196F3;
+        }
+
+        .add-btn { background-color: #4CAF50; }
+        .delete-btn { background-color: #f44336; }
+        .load-btn { background-color: #2196F3; }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* 標題樣式 */
+        h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        /* 移除舊的類別管理區塊 */
+        .class-management {
+            display: none;
+        }
+
+        /* 對話框樣式 */
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        /* 類別項目樣式 */
+        .class-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .class-item.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+        }
+
+        .class-name {
+            flex: 1;
+            padding-left: 10px;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        #download-all-annotations {
+            background-color: #2196F3;
+        }
+
+        #download-all-annotations:hover {
+            background-color: #1976D2;
+        }
+
+        /* 標題樣式 */
+        .left-panel h3 {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+
+        .main-header {
+            background-color: #2196F3;
+            color: white;
+            padding: 15px 0;
+            margin: 0;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .main-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        /* 調整主容器的樣式 */
+        .main-container {
+            height: calc(100vh - 54px); /* 減去 header 的高度 */
+        }
+
+        /* 修改左側面板的樣式 */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #controls .action-btn {
+            width: 100%;
+            padding: 8px;
+            margin: 0; /* 移除 margin */
+        }
+
+        #annotations {
+            width: 100%;
+            box-sizing: border-box; /* 確保 padding 不會增加寬度 */
+        }
+
+        #import-classes {
+            background-color: #9C27B0; /* 紫色 */
+        }
+        #import-classes:hover {
+            background-color: #7B1FA2;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <h1>YOLO Image Labeling Tool</h1>
+    </header>
+    
+    <!-- 類別管理 -->
+    <!-- <div class="class-management">
+        <h3>類別管理</h3>
+        <div class="class-input">
+            <input type="text" id="className" placeholder="輸入類別名稱">
+            <input type="color" id="classColor" value="#ff0000">
+            <button onclick="addClass()">添加類別</button>
+        </div>
+        <div id="classList" class="class-list">
+        </div>
+    </div> -->
+
+    <div class="main-container">
+        <!-- 左側面板：標註資料和下載按鈕 -->
+        <div class="left-panel">
+            <h3>標註資料</h3>
+            <div id="controls">
+                <button id="import-classes" class="action-btn">匯入類別</button>
+                <input type="file" id="import-classes-input" accept=".txt" style="display: none;">
+                <button id="import-annotations" class="action-btn">匯入標註</button>
+                <input type="file" id="import-input" accept=".txt,.zip" style="display: none;" multiple>
+                <button id="download-annotations" class="action-btn">下載當前標註</button>
+                <button id="download-all-annotations" class="action-btn">下載全部標註</button>
+                <button id="download-classes" class="action-btn">下載類別檔</button>
+            </div>
+            <textarea id="annotations" rows="10" readonly></textarea>
+        </div>
+
+        <!-- 中間面板：圖片編輯 -->
+        <div class="center-panel">
+            <div id="image-container">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- 右側面板：類別和檔案管理 -->
+        <div class="right-panel">
+            <!-- 類別管理 -->
+            <div class="panel-section">
+                <h3>類別管理</h3>
+                <button id="addClassBtn" class="action-btn add-btn" style="width: 100%; margin-bottom: 10px;">
+                    添加類別
+                </button>
+                <!-- 修改類別添加對話框 -->
+                <div id="addClassDialog" class="dialog" style="display: none;">
+                    <div class="dialog-content">
+                        <div class="class-input">
+                            <input type="text" id="newClassName" placeholder="輸入類別名稱">
+                            <input type="color" id="newClassColor" value="#ff0000">
+                            <button onclick="addClassConfirm()" class="action-btn add-btn">確認</button>
+                            <button onclick="closeAddClassDialog()" class="action-btn delete-btn">取消</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="classList" class="class-list">
+                    <!-- 類別列表將在這裡動態生成 -->
+                </div>
+            </div>
+
+            <!-- 檔案管理 -->
+            <div class="panel-section">
+                <h3>檔案管理</h3>
+                <button id="addImagesBtn" class="action-btn load-btn" style="width: 100%; margin-bottom: 10px;">
+                    加入圖片
+                </button>
+                <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                <div id="imageList" class="image-list">
+                    <!-- 圖片列表將在這裡動態生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const annotationsTextarea = document.getElementById("annotations");
+        const downloadButton = document.getElementById("download-annotations");
+
+        let images = [];
+        let currentImageIndex = 0;
+        let annotations = [];
+        let currentBoxes = [];
+        let isDrawing = false;
+        let startX, startY;
+
+        // 全局變數
+        let classes = [];
+        let currentClass = null;
+        let imageFiles = [];
+
+        // 修改資料結構，為每張圖片存儲各自的標註
+        let imageAnnotations = {}; // 用來存儲每張圖片的標註
+
+        // Handle file selection
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            if (!e.target.files.length) return;
+
+            // 保存當前標註
+            if (currentImageIndex !== undefined) {
+                imageAnnotations[currentImageIndex] = currentBoxes;
+            }
+
+            const newFiles = Array.from(e.target.files);
+            console.log('Selected files:', newFiles); // 添加調試信息
+
+            // 過濾重複的圖片
+            const uniqueNewFiles = newFiles.filter(newFile => {
+                const isDuplicate = imageFiles.some(existingFile => 
+                    existingFile && existingFile.name === newFile.name
+                );
+                
+                if (isDuplicate) {
+                    console.log(`圖片 ${newFile.name} 已經存在，將被跳過`);
+                    return false;
+                }
+                return true;
+            });
+
+            if (uniqueNewFiles.length === 0) {
+                alert('所選圖片都已經存在或沒有選擇新圖片！');
+                this.value = '';
+                return;
+            }
+
+            // 載入新圖片
+            uniqueNewFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const actualIndex = images.length;
+                        images.push(img);
+                        imageFiles.push(file);
+                        
+                        console.log(`Loaded image ${file.name} at index ${actualIndex}`); // 添加調試信息
+                        
+                        // 如果這是第一張圖片，立即顯示
+                        if (images.length === 1) {
+                            currentImageIndex = 0;
+                            loadImage(0);
+                        }
+                        updateImageList();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            this.value = ''; // 清空 input
+        });
+
+        // Load image onto canvas
+        function loadImage(index) {
+            if (index < 0 || index >= images.length) return;
+
+            // 保存當前標註
+            if (currentImageIndex !== undefined) {
+                imageAnnotations[currentImageIndex] = [...currentBoxes];
+            }
+
+            currentImageIndex = index;
+            currentBoxes = imageAnnotations[index] ? [...imageAnnotations[index]] : [];
+
+            const img = images[index];
+            if (img) {
+                const container = document.getElementById('image-container');
+                const containerWidth = container.clientWidth - 40;
+                const containerHeight = container.clientHeight - 40;
+                const containerRatio = containerWidth / containerHeight;
+                const imageRatio = img.width / img.height;
+
+                if (imageRatio > containerRatio) {
+                    canvas.width = containerWidth;
+                    canvas.height = containerWidth / imageRatio;
+                } else {
+                    canvas.height = containerHeight;
+                    canvas.width = containerHeight * imageRatio;
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                drawBoundingBoxes();
+                updateAnnotations();
+                updateImageList();
+            }
+        }
+
+        // Draw bounding boxes
+        function drawBoundingBoxes() {
+            currentBoxes.forEach((box, index) => {
+                // 使用類別的顏色，如果沒有對應的類別則使用預設紅色
+                const classObj = classes[box.class];
+                const boxColor = classObj ? classObj.color : "#ff0000";
+                
+                ctx.strokeStyle = boxColor;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]); // 確是實線
+                
+                const x = box.x * canvas.width;
+                const y = box.y * canvas.height;
+                const width = box.width * canvas.width;
+                const height = box.height * canvas.height;
+                
+                ctx.strokeRect(x, y, width, height);
+                
+                // 添加類別標籤
+                if (classObj) {
+                    ctx.fillStyle = boxColor;
+                    ctx.font = "12px Arial";
+                    ctx.fillText(classObj.name, x, y - 5);
+                }
+                
+                // 添刪除按鈕
+                const btnSize = 20;
+                const btnX = x + width - btnSize/2;
+                const btnY = y - btnSize/2;
+                
+                ctx.fillStyle = "red";
+                ctx.beginPath();
+                ctx.arc(btnX, btnY, btnSize/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(btnX - 5, btnY - 5);
+                ctx.lineTo(btnX + 5, btnY + 5);
+                ctx.moveTo(btnX + 5, btnY - 5);
+                ctx.lineTo(btnX - 5, btnY + 5);
+                ctx.stroke();
+
+                // 添加刪除按鈕的可點擊區域
+                const deleteButtonPath = new Path2D();
+                deleteButtonPath.arc(btnX, btnY, btnSize/2, 0, Math.PI * 2);
+                
+                // 保存路徑到 box 物件中，用於之後的滑鼠檢測
+                box.deleteButtonPath = deleteButtonPath;
+            });
+        }
+
+        // Mouse events for drawing bounding boxes
+        canvas.addEventListener("mousedown", (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            // 檢查是否點擊到刪除按鈕
+            let clickedDelete = false;
+            currentBoxes.forEach(box => {
+                if (box.deleteButtonPath && ctx.isPointInPath(box.deleteButtonPath, clickX, clickY)) {
+                    clickedDelete = true;
+                }
+            });
+
+            // 如果是要開始新的標註，檢查是否有選擇類別
+            if (!clickedDelete) {
+                if (!currentClass) {
+                    alert('請先選擇一個類別！');
+                    return;
+                }
+                isDrawing = true;
+                startX = clickX / canvas.width;
+                startY = clickY / canvas.height;
+            }
+        });
+
+        canvas.addEventListener("mouseup", (event) => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            const rect = canvas.getBoundingClientRect();
+            const endX = (event.clientX - rect.left) / canvas.width;
+            const endY = (event.clientY - rect.top) / canvas.height;
+
+            const x = Math.min(startX, endX);
+            const y = Math.min(startY, endY);
+            const width = Math.abs(startX - endX);
+            const height = Math.abs(startY - endY);
+
+            const classIndex = currentClass ? classes.indexOf(currentClass) : 0;
+            currentBoxes.push({ class: classIndex, x, y, width, height });
+            drawBoundingBoxes();
+            updateAnnotations();
+        });
+
+        // 添加滑鼠移動事件來繪製虛線框
+        canvas.addEventListener("mousemove", (event) => {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = (event.clientX - rect.left) / canvas.width;
+            const currentY = (event.clientY - rect.top) / canvas.height;
+            
+            // 重繪畫布
+            const img = images[currentImageIndex];
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            drawBoundingBoxes();
+            
+            // 繪製虛線框
+            ctx.setLineDash([5, 5]); // 設置虛線樣式
+            ctx.strokeStyle = currentClass ? currentClass.color : "#ff0000";
+            ctx.lineWidth = 2;
+            
+            const x = Math.min(startX, currentX);
+            const y = Math.min(startY, currentY);
+            const width = Math.abs(startX - currentX);
+            const height = Math.abs(startY - currentY);
+            
+            ctx.strokeRect(
+                x * canvas.width,
+                y * canvas.height,
+                width * canvas.width,
+                height * canvas.height
+            );
+            ctx.setLineDash([]); // 重置虛線樣式
+        });
+
+        // 添加點擊事件來處理刪除按鈕
+        canvas.addEventListener("click", (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+            
+            // 檢查是否點擊到刪除按鈕
+            currentBoxes.forEach((box, index) => {
+                if (box.deleteButtonPath && ctx.isPointInPath(box.deleteButtonPath, clickX, clickY)) {
+                    // 直接刪除標註，不需要檢查類別
+                    currentBoxes.splice(index, 1);
+                    // 重繪畫布
+                    const img = images[currentImageIndex];
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    drawBoundingBoxes();
+                    updateAnnotations();
+                    
+                    // 防止事件冒泡和開始新的標註
+                    event.stopPropagation();
+                    isDrawing = false;
+                }
+            });
+        });
+
+        // Update annotations textarea
+        function updateAnnotations() {
+            const annotations = currentBoxes.map(box => {
+                return `${box.class} ${box.x.toFixed(6)} ${box.y.toFixed(6)} ${box.width.toFixed(6)} ${box.height.toFixed(6)}`;
+            });
+            annotationsTextarea.value = annotations.join("\n");
+        }
+
+        // Download annotations as a text file
+        downloadButton.addEventListener("click", () => {
+            // 保存當前圖片的標註
+            imageAnnotations[currentImageIndex] = currentBoxes;
+
+            // 為每個檔案創建一個下載
+            imageFiles.forEach((file, index) => {
+                const annotations = imageAnnotations[index] || [];
+                if (annotations.length === 0) return;
+
+                const annotationText = annotations.map(box => {
+                    return `${box.class} ${box.x.toFixed(6)} ${box.y.toFixed(6)} ${box.width.toFixed(6)} ${box.height.toFixed(6)}`;
+                }).join("\n");
+
+                const blob = new Blob([annotationText], { type: "text/plain" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                
+                // 使用圖片檔名作為標註檔名
+                const fileName = file.name.replace(/\.[^/.]+$/, ""); // 移除副檔名
+                link.download = `${fileName}.txt`;
+                
+                // 延遲下載，避免瀏覽器阻擋
+                setTimeout(() => {
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                }, index * 100);
+            });
+        });
+
+        // 修改類別管理相關函數
+        function showAddClassDialog() {
+            document.getElementById('addClassDialog').style.display = 'block';
+            document.getElementById('newClassName').value = '';
+            document.getElementById('newClassColor').value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        }
+
+        function closeAddClassDialog() {
+            document.getElementById('addClassDialog').style.display = 'none';
+        }
+
+        function addClassConfirm() {
+            const name = document.getElementById('newClassName').value;
+            const color = document.getElementById('newClassColor').value;
+            if (name) {
+                const existingClass = classes.find(cls => cls.name === name);
+                if (existingClass) {
+                    alert('類別名稱已存在！');
+                    return;
+                }
+
+                classes.push({ name, color });
+                updateClassList();
+                closeAddClassDialog();
+                
+                // 添加調試信息
+                console.log('Added new class:', { name, color });
+                console.log('Current classes:', classes);
+            }
+        }
+
+        // 修改類別列表更新函數
+        function updateClassList() {
+            const classList = document.querySelector('.right-panel .class-list');
+            if (!classList) {
+                console.error('Class list element not found');
+                return;
+            }
+
+            classList.innerHTML = '';
+            classes.forEach((cls, index) => {
+                const div = document.createElement('div');
+                div.className = 'class-item';
+                if (currentClass === cls) {
+                    div.classList.add('selected');
+                    div.style.backgroundColor = '#e3f2fd';
+                    div.style.borderLeft = '4px solid #1976d2';
+                }
+                div.innerHTML = `
+                    <div class="class-info" onclick="selectClass(${index})">
+                        <span class="color-dot" style="background-color: ${cls.color}"></span>
+                        <span class="class-name">${cls.name}</span>
+                    </div>
+                    <div class="class-actions">
+                        <input type="color" value="${cls.color}" 
+                            onchange="updateClassColor(${index}, this.value)"
+                            class="color-picker">
+                        <button class="action-btn edit-btn" onclick="selectClass(${index})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="action-btn delete-btn" onclick="removeClass(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                classList.appendChild(div);
+            });
+            
+            // 添加調試信息
+            console.log('Updated class list with', classes.length, 'classes');
+        }
+
+        // 選擇類別
+        function selectClass(index) {
+            currentClass = classes[index];
+            
+            // 更新所有類別項目的樣式
+            document.querySelectorAll('.class-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('selected');
+                    item.style.backgroundColor = '#e3f2fd';
+                    item.style.borderLeft = '4px solid #1976d2';
+                } else {
+                    item.classList.remove('selected');
+                    item.style.backgroundColor = 'white';
+                    item.style.borderLeft = 'none';
+                }
+            });
+        }
+
+        // 修改刪除類別函數
+        function removeClass(index) {
+            // 刪除所有圖片中使用該類別的標註
+            Object.keys(imageAnnotations).forEach(imageIndex => {
+                const annotations = imageAnnotations[imageIndex];
+                if (annotations) {
+                    // 移除使用被刪除類別的標註
+                    imageAnnotations[imageIndex] = annotations.filter(box => box.class !== index);
+                    
+                    // 更新剩餘標註的類別索引
+                    imageAnnotations[imageIndex].forEach(box => {
+                        if (box.class > index) {
+                            box.class--;
+                        }
+                    });
+                }
+            });
+
+            // 更新當前圖片的標註
+            currentBoxes = currentBoxes.filter(box => box.class !== index);
+            currentBoxes.forEach(box => {
+                if (box.class > index) {
+                    box.class--;
+                }
+            });
+
+            // 刪除類別
+            classes.splice(index, 1);
+            
+            // 如果刪除的是當前選中的類別
+            if (currentClass && classes.indexOf(currentClass) === index) {
+                currentClass = null;
+            }
+
+            // 更新顯示
+            updateClassList();
+            if (images[currentImageIndex]) {
+                ctx.drawImage(images[currentImageIndex], 0, 0, canvas.width, canvas.height);
+                drawBoundingBoxes();
+            }
+            updateAnnotations();
+        }
+
+        // 添加更新類別顏色的函數
+        function updateClassColor(index, newColor) {
+            classes[index].color = newColor;
+            
+            // 更新所有圖片的標註顏色
+            Object.keys(imageAnnotations).forEach(imageIndex => {
+                const annotations = imageAnnotations[imageIndex];
+                if (annotations) {
+                    annotations.forEach(box => {
+                        if (box.class === index) {
+                            box.color = newColor;
+                        }
+                    });
+                }
+            });
+
+            // 如果是當前圖片，重新繪製
+            if (images[currentImageIndex]) {
+                ctx.drawImage(images[currentImageIndex], 0, 0, canvas.width, canvas.height);
+                drawBoundingBoxes();
+            }
+        }
+
+        // 添加按鈕點擊事件
+        document.getElementById('addImagesBtn').addEventListener('click', function() {
+            document.getElementById('imageInput').click();
+        });
+
+        // 修改更新圖片列表顯示函數
+        function updateImageList() {
+            const imageList = document.getElementById('imageList');
+            imageList.innerHTML = '';
+            
+            imageFiles.forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'image-item';
+                if (index === currentImageIndex) {
+                    div.classList.add('selected');
+                }
+                
+                div.innerHTML = `
+                    <div class="image-info" onclick="loadImage(${index})">
+                        <span class="image-name">${file.name}</span>
+                    </div>
+                    <div class="image-actions">
+                        <button class="action-btn load-btn" onclick="loadImage(${index})">
+                            <i class="fas fa-pen-to-square"></i>
+                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteImage(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                imageList.appendChild(div);
+            });
+        }
+
+        // 修改檔案刪除函數
+        function deleteImage(index) {
+            if (index < 0 || index >= images.length) return;
+
+            // 如果刪除當前圖片，先切換到其他圖片
+            if (index === currentImageIndex) {
+                const newIndex = index === images.length - 1 ? index - 1 : index + 1;
+                if (newIndex >= 0) {
+                    loadImage(newIndex);
+                } else {
+                    currentImageIndex = undefined;
+                    currentBoxes = [];
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            // 刪除圖片相關資料
+            images.splice(index, 1);
+            imageFiles.splice(index, 1);
+            
+            // 重新組織標註資料
+            const newAnnotations = {};
+            Object.keys(imageAnnotations).forEach(key => {
+                const keyNum = parseInt(key);
+                if (keyNum < index) {
+                    newAnnotations[keyNum] = imageAnnotations[keyNum];
+                } else if (keyNum > index) {
+                    newAnnotations[keyNum - 1] = imageAnnotations[keyNum];
+                }
+            });
+            imageAnnotations = newAnnotations;
+
+            updateImageList();
+        }
+
+        // 添加下載類別檔案的功能
+        document.getElementById('download-classes').addEventListener("click", () => {
+            const classesText = classes.map((cls, index) => `${index} ${cls.name}`).join("\n");
+            const blob = new Blob([classesText], { type: "text/plain" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "classes.txt";
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
+
+        // 添加滑鼠移動事件來改變游標樣式
+        canvas.addEventListener("mousemove", (event) => {
+            if (isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // 檢查是否在任何刪除按鈕上
+            let onDeleteButton = false;
+            currentBoxes.forEach(box => {
+                if (box.deleteButtonPath && ctx.isPointInPath(box.deleteButtonPath, mouseX, mouseY)) {
+                    onDeleteButton = true;
+                }
+            });
+
+            // 根據位置改變游標樣式
+            canvas.style.cursor = onDeleteButton ? 'pointer' : 'crosshair';
+        });
+
+        // 綁定添加類別按鈕事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const addClassBtn = document.getElementById('addClassBtn');
+            if (addClassBtn) {
+                addClassBtn.addEventListener('click', showAddClassDialog);
+            } else {
+                console.error('Add class button not found');
+            }
+        });
+
+        // 修改圖片容器樣式
+        const style = document.createElement('style');
+        style.textContent = `
+            #image-container {
+                flex: 1;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+                padding: 20px;
+                background: #f5f5f5;
+                border-radius: 8px;
+            }
+
+            .image-item {
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+
+            .image-item:hover {
+                background: #f0f0f0;
+            }
+
+            .image-item.selected {
+                background: #e3f2fd;
+                border-left: 4px solid #1976d2;
+            }
+
+            #canvas {
+                background: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 添加下載所有標註的功能
+        document.getElementById('download-all-annotations').addEventListener("click", () => {
+            // 保存當前圖片的標註
+            if (currentImageIndex !== undefined) {
+                imageAnnotations[currentImageIndex] = [...currentBoxes];
+            }
+
+            // 創建一個 zip 文件
+            const zip = new JSZip();
+
+            // 為每個圖片創建標註文件
+            imageFiles.forEach((file, index) => {
+                const annotations = imageAnnotations[index] || [];
+                if (annotations.length > 0) {
+                    const annotationText = annotations.map(box => {
+                        return `${box.class} ${box.x.toFixed(6)} ${box.y.toFixed(6)} ${box.width.toFixed(6)} ${box.height.toFixed(6)}`;
+                    }).join("\n");
+
+                    // 使用圖片檔名作為標註檔名
+                    const fileName = file.name.replace(/\.[^/.]+$/, ""); // 移除副檔名
+                    zip.file(`${fileName}.txt`, annotationText);
+                }
+            });
+
+            // 生成並下載 zip 文件
+            zip.generateAsync({type: "blob"}).then(function(content) {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "annotations.zip";
+                link.click();
+                URL.revokeObjectURL(link.href);
+            });
+        });
+
+        // 修改標註文本區域的樣
+        const textareaStyle = document.createElement('style');
+        textareaStyle.textContent = `
+            #annotations {
+                width: 100%;
+                flex: 1;
+                min-height: 200px;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-family: monospace;
+                resize: none;
+                white-space: pre;           /* 使用 pre 格式保持換行和空格 */
+                overflow-x: auto;           /* 允許水平捲動 */
+                overflow-y: auto;           /* 允許垂直捲動 */
+                font-size: 14px;            /* 設定合適的字體大小 */
+                line-height: 1.5;           /* 設定行高 */
+                tab-size: 4;                /* 設定 tab 的寬度 */
+            }
+        `;
+        document.head.appendChild(textareaStyle);
+
+        // 添加匯入標註功能
+        document.getElementById('import-annotations').addEventListener('click', () => {
+            document.getElementById('import-input').click();
+        });
+
+        document.getElementById('import-input').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            // 檢查是否為 zip 檔
+            if (files[0].name.endsWith('.zip')) {
+                const zip = await JSZip.loadAsync(files[0]);
+                
+                // 處理 zip 中的檔案
+                for (let filename in zip.files) {
+                    if (filename.endsWith('.txt')) {
+                        const content = await zip.files[filename].async('text');
+                        const imageName = filename.replace('.txt', '');
+                        
+                        // 尋找對應的圖片
+                        const imageIndex = imageFiles.findIndex(file => 
+                            file.name.replace(/\.[^/.]+$/, '') === imageName
+                        );
+
+                        if (imageIndex !== -1) {
+                            // 解析標註內容
+                            const annotations = content.split('\n')
+                                .filter(line => line.trim())
+                                .map(line => {
+                                    const [classId, x, y, width, height] = line.split(' ').map(Number);
+                                    return { class: classId, x, y, width, height };
+                                });
+                            
+                            imageAnnotations[imageIndex] = annotations;
+                        }
+                    }
+                }
+            } else {
+                // 處理單個 txt 檔
+                for (let file of files) {
+                    if (!file.name.endsWith('.txt')) continue;
+
+                    const content = await file.text();
+                    const imageName = file.name.replace('.txt', '');
+                    
+                    // 尋找對應的圖片
+                    const imageIndex = imageFiles.findIndex(file => 
+                        file.name.replace(/\.[^/.]+$/, '') === imageName
+                    );
+
+                    if (imageIndex !== -1) {
+                        // 解析標註內容
+                        const annotations = content.split('\n')
+                            .filter(line => line.trim())
+                            .map(line => {
+                                const [classId, x, y, width, height] = line.split(' ').map(Number);
+                                return { class: classId, x, y, width, height };
+                            });
+                        
+                        imageAnnotations[imageIndex] = annotations;
+                    }
+                }
+            }
+
+            // 更新當前圖片的顯示
+            if (currentImageIndex !== undefined) {
+                currentBoxes = imageAnnotations[currentImageIndex] || [];
+                drawBoundingBoxes();
+                updateAnnotations();
+            }
+
+            e.target.value = ''; // 清空輸入
+            alert('標註匯入完成');
+        });
+
+        // 生成隨機顏色的函數
+        function generateRandomColor() {
+            const hue = Math.random() * 360;
+            const saturation = 70 + Math.random() * 30; // 70-100%
+            const lightness = 35 + Math.random() * 15;  // 35-50%
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        // 添加匯入類別功能
+        document.getElementById('import-classes').addEventListener('click', () => {
+            document.getElementById('import-classes-input').click();
+        });
+
+        document.getElementById('import-classes-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const content = await file.text();
+                const newClasses = [];
+                const usedColors = new Set(classes.map(cls => cls.color));
+                
+                // 解析類別檔案
+                content.split('\n').forEach(line => {
+                    line = line.trim();
+                    if (!line) return;
+                    
+                    const [id, name] = line.split(' ');
+                    if (name) {
+                        // 生成不重複的顏色
+                        let color;
+                        do {
+                            color = generateRandomColor();
+                        } while (usedColors.has(color));
+                        usedColors.add(color);
+
+                        newClasses[parseInt(id)] = {
+                            name: name,
+                            color: color
+                        };
+                    }
+                });
+
+                // 過濾掉空值並更新類別陣列
+                classes = newClasses.filter(cls => cls);
+
+                // 更新界面
+                updateClassList();
+                
+                // 如果有圖片正在顯示，重新繪製標註
+                if (currentImageIndex !== undefined && images[currentImageIndex]) {
+                    ctx.drawImage(images[currentImageIndex], 0, 0, canvas.width, canvas.height);
+                    drawBoundingBoxes();
+                }
+
+                alert('類別匯入完成');
+            } catch (error) {
+                console.error('Error importing classes:', error);
+                alert('匯入類別時發生錯誤');
+            }
+
+            e.target.value = ''; // 清空輸入
+        });
+
+        // 添加新的樣式
+        const buttonStyle = document.createElement('style');
+        buttonStyle.textContent = `
+            .action-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                color: white;
+                transition: all 0.2s ease;
+            }
+
+            .action-btn i {
+                font-size: 14px;
+            }
+
+            .load-btn:hover {
+                background-color: #1976D2;
+            }
+
+            .delete-btn:hover {
+                background-color: #d32f2f;
+            }
+
+            .edit-btn:hover {
+                background-color: #388E3C;
+            }
+
+            .class-actions, .image-actions {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+            }
+        `;
+        document.head.appendChild(buttonStyle);
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+</body>
+</html>
