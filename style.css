@@ -1,0 +1,711 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    min-width: 600px;
+    overflow-x: auto;
+}
+canvas {
+    border: 1px solid #ccc;
+    cursor: crosshair;
+}
+#controls {
+    margin-top: 10px;
+}
+#image-container {
+    margin: 20px auto;
+    max-width: 90%;
+}
+#output {
+    margin-top: 20px;
+}
+.class-management, .file-management {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 0 auto 20px;
+    max-width: 800px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.class-list, .image-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+.class-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+.class-input input[type="text"] {
+    width: 200px;
+}
+.class-item, .image-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 8px;
+}
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-width: 600px;
+    position: relative;
+    height: calc(100vh - 54px);
+}
+
+/* 左側面板 */
+.left-panel {
+    position: relative;
+    width: 300px;
+    min-width: 300px;
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: 100%;
+    box-sizing: border-box;
+    transition: transform 0.3s ease;
+    z-index: 2;
+}
+
+/* 中間編輯區 */
+.center-panel {
+    display: flex;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-left: 0;
+    margin-right: 0;
+    z-index: 1;
+}
+
+/* 右側面板 */
+.right-panel {
+    position: relative;
+    width: 300px;
+    min-width: 300px;
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: 100%;
+    box-sizing: border-box;
+    transition: transform 0.3s ease;
+    z-index: 2;
+}
+
+#image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f5f5f5;
+    padding: 0;
+}
+
+#canvas {
+    max-width: 100%;
+    max-height: 100%;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* z-index: 1; */
+}
+
+.image-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.image-item.selected {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+}
+
+.image-item .image-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#annotations {
+    width: 100%;
+    flex: 1;
+    min-height: 200px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    resize: none;
+    white-space: nowrap;  /* 防止文字換行 */
+    overflow-x: auto;     /* 允許水平捲動 */
+    overflow-y: auto;     /* 允許垂直捲動 */
+}
+
+/* 美化按鈕 */
+.action-btn {
+    padding: 4px 8px;
+    margin-left: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+}
+
+.edit-btn { background-color: #4CAF50; }
+.delete-btn { background-color: #f44336; }
+.load-btn { background-color: #2196F3; }
+
+.action-btn:hover {
+    opacity: 0.8;
+}
+
+/* 面板基本樣式 */
+.left-panel, .right-panel {
+    position: relative;
+    width: 300px;
+    min-width: 300px;
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: 100%;
+    box-sizing: border-box;
+    transition: transform 0.3s ease;
+    z-index: 2;
+}
+
+/* 面板區塊樣式 */
+.panel-section {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 控制按鈕區域 */
+#controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+#controls .action-btn {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* 標註文本區域 */
+#annotations {
+    width: 100%;
+    flex: 1;
+    min-height: 200px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    resize: none;
+    white-space: nowrap;  /* 防止文字換行 */
+    overflow-x: auto;     /* 允許水平捲動 */
+    overflow-y: auto;     /* 允許垂直捲動 */
+}
+
+/* 類別輸入區域 */
+.class-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.class-input input[type="text"] {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.class-input input[type="color"] {
+    width: 40px;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* 列表樣式 */
+.class-list, .image-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+/* 按鈕樣式 */
+.action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    background-color: #2196F3;
+}
+
+.add-btn { background-color: #4CAF50; }
+.delete-btn { background-color: #f44336; }
+.load-btn { background-color: #2196F3; }
+
+.action-btn:hover {
+    opacity: 0.9;
+}
+
+/* 標題樣式 */
+h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+/* 移除舊的類別管理區塊 */
+.class-management {
+    display: none;
+}
+
+/* 對話框樣式 */
+.dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+/* 類別項目樣式 */
+.class-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.class-item.selected {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+}
+
+.class-name {
+    flex: 1;
+    padding-left: 10px;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+#download-all-annotations {
+    background-color: #2196F3;
+}
+
+#download-all-annotations:hover {
+    background-color: #1976D2;
+}
+
+/* 標題樣式 */
+.left-panel h3 {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.main-header {
+    background-color: #2196F3;
+    color: white;
+    padding: 15px 0;
+    margin: 0;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-width: 600px;
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+/* 調整主容器的樣式 */
+.main-container {
+    height: calc(100vh - 54px); /* 減去 header 的高度 */
+}
+
+/* 修改左側面板的樣式 */
+/* .left-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+} */
+
+#controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+#controls .action-btn {
+    width: 100%;
+    padding: 8px;
+    margin: 0; /* 移除 margin */
+}
+
+#annotations {
+    width: 100%;
+    box-sizing: border-box; /* 確保 padding 不會增加寬度 */
+}
+
+#import-classes {
+    background-color: #9C27B0; /* 紫色 */
+}
+#import-classes:hover {
+    background-color: #7B1FA2;
+}
+
+/* 修改面板切換按鈕的基本樣式 */
+.panel-toggle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 48px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    z-index: 3;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.left-toggle {
+    right: -24px;
+    border-radius: 0 4px 4px 0;
+}
+
+.right-toggle {
+    left: -24px;
+    border-radius: 4px 0 0 4px;
+}
+
+/* 修改面板收起狀態 */
+.left-panel.collapsed {
+    transform: translateX(-100%);
+    margin-right: -300px;
+}
+
+.right-panel.collapsed {
+    transform: translateX(100%);
+    margin-left: -300px;
+}
+
+/* 確保按鈕在面板收起時仍然可見且可點擊 */
+.left-panel.collapsed .left-toggle,
+.right-panel.collapsed .right-toggle {
+    position: absolute;
+    z-index: 3;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 當面板收起時調整中間面板的大小 */
+.left-panel.collapsed ~ .center-panel {
+    /* margin-left: 24px; */
+    margin-left: 0px;
+    flex: 1;
+}
+
+.right-panel.collapsed ~ .center-panel {
+    margin-right: 24px;
+    flex: 1;
+}
+
+/* 箭頭方向 */
+.left-panel .left-toggle i {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+}
+
+.right-panel .right-toggle i {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}
+
+.left-panel.collapsed .left-toggle i {
+    transform: rotate(180deg);
+}
+
+.right-panel.collapsed .right-toggle i {
+    transform: rotate(0deg);
+}
+
+/* .zoom-controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.zoom-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.zoom-btn:hover {
+    background: #1976D2;
+}
+
+#zoom-level {
+    min-width: 60px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 14px;
+} */
+
+/* 確保按鈕始終可見 */
+.panel-toggle {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 當兩個面板都收起時 */
+.left-panel.collapsed ~ .center-panel.right-panel.collapsed {
+    width: calc(100% - 48px); /* 減去兩箭頭按鈕的寬度 */
+}
+
+/* 修改類別項目和圖片項目的共同樣式 */
+.class-item, .image-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 8px;
+}
+
+/* 刪除按鈕容器 */
+.class-actions, .image-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* 刪除按鈕樣式 */
+.action-btn.delete-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 顏色選擇器樣式 */
+.color-picker {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid black;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* 類別和圖片資訊容器 */
+.class-info, .image-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* 類別和圖片名稱 */
+.class-name, .image-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 選中狀態 */
+.class-item.selected, .image-item.selected {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+    padding-left: 4px;
+}
+
+/* 懸停提示 */
+.class-item:hover .class-name, 
+.image-item:hover .image-name {
+    position: relative;
+}
+
+.class-item:hover .class-name::after, 
+.image-item:hover .image-name::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    white-space: nowrap;
+}
+
+/* 修改刪除按鈕和顏色選擇器的共同樣式 */
+.action-btn.delete-btn,
+.color-picker {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 修改對話框中的按鈕和輸入框樣式 */
+.dialog .class-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dialog .class-input input[type="text"] {
+    flex: 1;
+    height: 24px;
+    padding: 0 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dialog .class-input input[type="color"],
+.dialog .class-input .action-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dialog .class-input input[type="color"] {
+    padding: 2px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* 確保所有按鈕圖示大小一致 */
+.action-btn i {
+    font-size: 14px;
+}
+
+/* 修改類別名稱的對齊方式 */
+.class-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    padding-left: 0;
+}
+
+.class-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+/* 修改對話框中的 color-picker */
+.dialog .class-input input[type="color"] {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid black;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
