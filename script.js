@@ -171,6 +171,11 @@ function drawBoundingBoxes() {
 
 // Mouse events for drawing bounding boxes
 canvas.addEventListener("mousedown", (event) => {
+    if (currentImageIndex === undefined || !images[currentImageIndex]) {
+        alert('請先選擇一張圖片！');
+        return;
+    }
+    
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
