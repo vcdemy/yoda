@@ -18,6 +18,9 @@ let imageFiles = [];
 // 修改資料結構，為每張圖片存儲各自的標註
 let imageAnnotations = {}; // 用來存儲每張圖片的標註
 
+// 在全局變數區域添加
+let isDash = false;
+
 // Handle file selection
 document.getElementById('imageInput').addEventListener('change', function(e) {
     if (!e.target.files.length) return;
@@ -196,13 +199,14 @@ canvas.addEventListener("mousedown", (event) => {
             return;
         }
         isDrawing = true;
+        isDash = true; // 開始繪製時設置為 true
         startX = clickX;
         startY = clickY;
     }
 });
 
 canvas.addEventListener("mousemove", (event) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !isDash) return; // 檢查 isDash
     
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -210,30 +214,30 @@ canvas.addEventListener("mousemove", (event) => {
     const currentX = (event.clientX - rect.left) * scaleX;
     const currentY = (event.clientY - rect.top) * scaleY;
     
-    // 重繪畫布
+    // 重繪畫布和現有的標註
     const img = images[currentImageIndex];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     drawBoundingBoxes();
     
-    // 繪製虛線框
-    ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = currentClass ? currentClass.color : "#ff0000";
-    ctx.lineWidth = 2;
-    
-    // 計算框的座標和大小
-    const x = Math.min(startX, currentX);
-    const y = Math.min(startY, currentY);
-    const width = Math.abs(startX - currentX);
-    const height = Math.abs(startY - currentY);
-    
-    // 繪製虛線框
-    ctx.strokeRect(x, y, width, height);
-    ctx.setLineDash([]);
+    // 只有在 isDash 為 true 時才畫虛線框
+    if (isDash) {
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = currentClass ? currentClass.color : "#ff0000";
+        ctx.lineWidth = 2;
+        
+        const x = Math.min(Math.max(0, Math.min(startX, currentX)), canvas.width);
+        const y = Math.min(Math.max(0, Math.min(startY, currentY)), canvas.height);
+        const width = Math.min(Math.abs(startX - currentX), canvas.width - x);
+        const height = Math.min(Math.abs(startY - currentY), canvas.height - y);
+        
+        ctx.strokeRect(x, y, width, height);
+        ctx.setLineDash([]);
+    }
 });
 
 canvas.addEventListener("mouseup", (event) => {
     if (!isDrawing) return;
-    isDrawing = false;
     
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -241,9 +245,13 @@ canvas.addEventListener("mouseup", (event) => {
     const currentX = (event.clientX - rect.left) * scaleX;
     const currentY = (event.clientY - rect.top) * scaleY;
 
+    isDash = false; // 立即停止虛線繪製
+
     // 計算標註框的座標和大小（相對於畫布的比例）
     const x = Math.min(startX, currentX) / canvas.width;
+    if (x < 0) x = 0;
     const y = Math.min(startY, currentY) / canvas.height;
+    if (y < 0) y = 0;
     const width = Math.abs(startX - currentX) / canvas.width;
     const height = Math.abs(startY - currentY) / canvas.height;
 
@@ -253,16 +261,25 @@ canvas.addEventListener("mouseup", (event) => {
         const newBox = { class: classIndex, x, y, width, height };
         currentBoxes.push(newBox);
         
-        // 重繪畫布
-        drawBoundingBoxes();
-        
-        // 更新文字方塊
-        updateAnnotations();
-        
         // 保存到當前圖片的標註
         if (currentImageIndex !== undefined) {
             imageAnnotations[currentImageIndex] = [...currentBoxes];
         }
+
+        // 重繪畫布和標註
+        const img = images[currentImageIndex];
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        drawBoundingBoxes();
+        
+        // 強制更新文字方塊
+        updateAnnotations();
+        
+        // 延遲設置 isDrawing 為 false
+        setTimeout(() => {
+            isDrawing = false;
+        }, 100);
+    } else {
+        isDrawing = false;
     }
 });
 
@@ -270,11 +287,28 @@ canvas.addEventListener("mouseup", (event) => {
 function updateAnnotations() {
     if (!annotationsTextarea) return;
     
-    const annotations = currentBoxes.map(box => {
-        return `${box.class} ${box.x.toFixed(6)} ${box.y.toFixed(6)} ${box.width.toFixed(6)} ${box.height.toFixed(6)}`;
-    });
+    // 確保 currentBoxes 存在且是陣列
+    if (!Array.isArray(currentBoxes)) {
+        console.error('currentBoxes is not an array:', currentBoxes);
+        return;
+    }
     
-    annotationsTextarea.value = annotations.join('\n');
+    try {
+        const annotations = currentBoxes.map(box => {
+            // 確保所有必要的值都存在
+            if (box.class === undefined || box.x === undefined || 
+                box.y === undefined || box.width === undefined || 
+                box.height === undefined) {
+                console.error('Invalid box data:', box);
+                return '';
+            }
+            return `${box.class} ${box.x.toFixed(6)} ${box.y.toFixed(6)} ${box.width.toFixed(6)} ${box.height.toFixed(6)}`;
+        }).filter(text => text !== ''); // 過濾掉無效的標註
+        
+        annotationsTextarea.value = annotations.join('\n');
+    } catch (error) {
+        console.error('Error updating annotations:', error);
+    }
 }
 
 // Download annotations as a text file
@@ -299,7 +333,7 @@ downloadButton.addEventListener("click", () => {
         const fileName = file.name.replace(/\.[^/.]+$/, ""); // 移除副檔名
         link.download = `${fileName}.txt`;
         
-        // 延遲下載避免瀏覽器阻擋
+        // 延遲下載避免覽器阻擋
         setTimeout(() => {
             link.click();
             URL.revokeObjectURL(link.href);
@@ -947,14 +981,21 @@ canvas.addEventListener("click", (event) => {
     const clickX = (event.clientX - rect.left) * scaleX;
     const clickY = (event.clientY - rect.top) * scaleY;
 
-    if (Math.abs(clickX-startX) > 50 && Math.abs(clickY-startY) > 50) return;
-    // alert(clickX + "\n" + clickY + "\n" + startX + "\n" + startY);
-    
+
+    if (isDrawing) return; 
+
+
     // 檢查是否點擊到刪除按鈕
     currentBoxes.forEach((box, index) => {
         if (box.deleteButtonPath && ctx.isPointInPath(box.deleteButtonPath, clickX, clickY)) {
             // 刪除標註
             currentBoxes.splice(index, 1);
+            
+            // 保存到當前圖片的標註
+            if (currentImageIndex !== undefined) {
+                imageAnnotations[currentImageIndex] = [...currentBoxes];
+            }
+            
             // 重繪畫布
             const img = images[currentImageIndex];
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
