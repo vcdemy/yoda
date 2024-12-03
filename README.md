@@ -8,7 +8,7 @@ YODA是<ins>**YO**</ins>LO <ins>**DA**</ins>TA Labeler的縮寫。
 
 網址： https://vcdemy.github.io/yoda
 
-## 相關工具：
+## 其他工具
 
 * [labelimg](https://github.com/HumanSignal/labelImg)
 * [labelme](https://github.com/wkentaro/labelme)
