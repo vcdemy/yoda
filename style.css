@@ -8,20 +8,17 @@ body {
     min-width: 600px;
     overflow: hidden;
 }
+
 canvas {
     border: 1px solid #ccc;
     cursor: crosshair;
 }
-/* #controls {
-    margin-top: 10px;
-} */
+
 #image-container {
-    margin: 20px auto;
-    max-width: 90%;
+    margin: 0;
+    max-width: 100%;
 }
-#output {
-    margin-top: 20px;
-}
+
 .class-management, .file-management {
     background: white;
     border-radius: 8px;
@@ -30,20 +27,18 @@ canvas {
     max-width: 800px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.class-list, .image-list {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 10px;
-}
+
 .class-input {
     display: flex;
     gap: 8px;
     margin-bottom: 15px;
     justify-content: center;
 }
+
 .class-input input[type="text"] {
     width: 200px;
 }
+
 .class-item, .image-item {
     display: flex;
     align-items: center;
@@ -57,16 +52,6 @@ canvas {
     gap: 8px;
     box-sizing: border-box;
 }
-body {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    font-family: Arial, sans-serif;
-    min-width: 600px;
-    overflow: hidden;
-}
 
 .main-container {
     display: flex;
@@ -78,12 +63,12 @@ body {
     box-sizing: border-box;
 }
 
-/* 左側面板 */
-.left-panel {
+/* 面板基本樣式 */
+.left-panel, .right-panel {
     position: relative;
     width: 300px;
     min-width: 300px;
-    background: #f8f9fa;
+    background: #e8e8e8;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -106,21 +91,6 @@ body {
     z-index: 1;
 }
 
-/* 右側面板 */
-.right-panel {
-    position: relative;
-    width: 300px;
-    min-width: 300px;
-    background: #f8f9fa;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    height: 100%;
-    box-sizing: border-box;
-    transition: transform 0.3s ease;
-    z-index: 2;
-}
 
 #image-container {
     position: absolute;
@@ -131,8 +101,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #f5f5f5;
+    background: white;
     padding: 0;
+    margin: 25px;
 }
 
 #canvas {
@@ -166,48 +137,33 @@ body {
     white-space: nowrap;
 }
 
-
-/* 美化按鈕 */
-.action-btn {
-    padding: 4px 8px;
-    margin-left: 5px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    color: white;
-}
-
-.action-btn:hover {
-    opacity: 0.8;
-}
-
-/* 面板基本樣式 */
-.left-panel, .right-panel {
-    position: relative;
-    width: 300px;
-    min-width: 300px;
-    background: #f8f9fa;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    height: 100%;
-    box-sizing: border-box;
-    transition: transform 0.3s ease;
-    z-index: 2;
-}
-
 /* 面板區塊樣式 */
 .panel-section {
     background: white;
     border-radius: 8px;
-    padding: 15px;
+    padding: 0;
     margin-bottom: 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
+}
+
+/* 系統功能區塊樣式 */
+.system-section {
+    flex: 0 0 auto;
+    padding: 0;
+    margin-bottom: 10px;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.system-section h3 {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 16px;
 }
 
 /* 確保檔案列表可以完整顯示 */
@@ -265,11 +221,12 @@ body {
 /* 列表樣式 */
 .class-list, .image-list {
     flex: 1;
+    max-height: 300px;
     overflow-y: auto;
     border: 1px solid #eee;
     border-radius: 4px;
     padding: 4px;
-    margin-right: 4px;
+    margin: 0 10px 10px 10px;
 }
 
 /* 按鈕樣式 */
@@ -288,13 +245,6 @@ body {
 
 .action-btn:hover {
     opacity: 0.9;
-}
-
-/* 標題樣式 */
-h3 {
-    margin: 0 0 15px 0;
-    color: #333;
-    font-size: 16px;
 }
 
 /* 移除舊的類別管理區塊 */
@@ -358,11 +308,11 @@ h3 {
 }
 
 /* 標題樣式 */
-.left-panel h3 {
+/* .left-panel h3 {
     margin: 0;
     padding: 5px 10px;
     width: 100%;
-}
+} */
 
 .main-header {
     background-color: #2196F3;
@@ -405,33 +355,11 @@ h3 {
     height: calc(100vh - 54px); /* 減去 header 的高度 */
 }
 
-/* 修改左側面板的樣式 */
-/* .left-panel {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    box-sizing: border-box;
-} */
-
-/* #controls {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-#controls .action-btn {
-    width: 100%;
-    padding: 8px;
-    margin: 0;
-} 
-*/
-
 
 #import-classes {
     background-color: #9C27B0; /* 紫色 */
 }
+
 #import-classes:hover {
     background-color: #7B1FA2;
 }
@@ -443,8 +371,8 @@ h3 {
     transform: translateY(-50%);
     width: 24px;
     height: 48px;
-    background: #2196F3;
-    color: white;
+    background: #e8e8e8;
+    color: #666;
     border: none;
     cursor: pointer;
     z-index: 3;
@@ -487,7 +415,6 @@ h3 {
 
 /* 當面板收起時調整中間面板的大小 */
 .left-panel.collapsed ~ .center-panel {
-    /* margin-left: 24px; */
     margin-left: 0px;
     flex: 1;
 }
@@ -782,9 +709,7 @@ h3 {
     border: 1px solid #eee;
     border-radius: 4px;
     padding: 4px;
-    /* margin-right: 4px; */
-    margin: 5px 10px;
-    /* margin-bottom: 20px; */
+    margin: 0 10px 10px;
 }
 
 /* 自定義捲動條樣式 */
@@ -840,6 +765,7 @@ h3 {
 .panel-section h3 {
     margin: 0;
     padding: 5px 10px;
+    font-size: 16px;
 }
 
 /* 修改按鈕顏色樣式 */
@@ -865,7 +791,8 @@ h3 {
 .class-buttons {
     display: flex;
     gap: 8px;
-    margin-bottom: 10px;
+    /* margin-bottom: 10px; */
+    margin: 10px 10px;
 }
 
 /* 類別按鈕樣式 */
@@ -967,23 +894,6 @@ h3 {
     font-size: 18px;
 }
 
-
-/* 系統功能區塊樣式 */
-.system-section {
-    flex: 0 0 auto;
-    padding: 0;
-    margin-bottom: 10px;
-    min-height: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-.system-section h3 {
-    margin: 0;
-    padding: 5px 10px;
-    font-size: 16px;
-}
-
 /* 系統功能按鈕容器 */
 .system-buttons,
 .annotation-buttons {
@@ -1017,7 +927,7 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin: 0 10px;
+    margin: 10px 10px;
     font-size: 14px;
     width: calc(100% - 20px);
 }
@@ -1054,22 +964,6 @@ h3 {
 /* 調整標註按鈕群組的間距 */
 .annotation-buttons {
     margin-bottom: 8px;
-}
-
-/* 系統功能區塊樣式 */
-.system-section {
-    flex: 0 0 auto;
-    padding: 10px;
-    margin-bottom: 10px;
-    min-height: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-.system-section h3 {
-    margin: 0;
-    padding: 5px 10px;
-    font-size: 16px;
 }
 
 /* 所有按鈕群組的共同樣式 */
