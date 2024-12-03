@@ -21,62 +21,106 @@ let imageAnnotations = {}; // 用來存儲每張圖片的標註
 // 在全局變數區域添加
 let isDash = false;
 
+// 添加全局變數
+let showClassId = false; // 預設顯示類別名稱
+
 // Handle file selection
-document.getElementById('imageInput').addEventListener('change', function(e) {
+document.getElementById('imageInput').addEventListener('change', async function(e) {
     if (!e.target.files.length) return;
 
     // 保存當前標註
     if (currentImageIndex !== undefined) {
-        imageAnnotations[currentImageIndex] = currentBoxes;
+        imageAnnotations[currentImageIndex] = [...currentBoxes];
     }
 
     const newFiles = Array.from(e.target.files);
-    console.log('Selected files:', newFiles); // 添加調試信息
+    console.log('Selected files:', newFiles);
 
-    // 過濾重複的圖片
-    const uniqueNewFiles = newFiles.filter(newFile => {
-        const isDuplicate = imageFiles.some(existingFile => 
-            existingFile && existingFile.name === newFile.name
-        );
-        
-        if (isDuplicate) {
-            console.log(`圖片 ${newFile.name} 已經存在，將被跳過`);
-            return false;
-        }
-        return true;
-    });
+    // 過濾重複的圖片並排序
+    const uniqueNewFiles = newFiles
+        .filter(newFile => {
+            const isDuplicate = imageFiles.some(existingFile => 
+                existingFile && existingFile.name === newFile.name
+            );
+            
+            if (isDuplicate) {
+                console.log(`圖片 ${newFile.name} 已經存在，將被跳過`);
+                return false;
+            }
+            return true;
+        })
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
 
     if (uniqueNewFiles.length === 0) {
-        alert('所選圖片都已經在或沒有選擇新圖片！');
+        alert('所選圖片都已經存在或沒有選擇新圖片！');
         this.value = '';
         return;
     }
 
-    // 載入新圖片
-    uniqueNewFiles.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const actualIndex = images.length;
-                images.push(img);
-                imageFiles.push(file);
-                
-                console.log(`Loaded image ${file.name} at index ${actualIndex}`); // 添加調試信息
-                
-                // 如果這是第一張圖片，立即顯示
-                if (images.length === 1) {
-                    currentImageIndex = 0;
-                    loadImage(0);
-                }
-                updateImageList();
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
+    // 使用 Promise.all 等待所有圖片載入完成
+    try {
+        const loadPromises = uniqueNewFiles.map(file => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        resolve({ img, file });
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        });
 
-    this.value = ''; // 清空 input
+        const loadedImages = await Promise.all(loadPromises);
+
+        // 所有圖片載入完成後，一次性更新陣列
+        loadedImages.forEach(({ img, file }) => {
+            images.push(img);
+            imageFiles.push(file);
+        });
+
+        // 重新排序所有圖片
+        const combinedFiles = imageFiles.map((file, index) => ({
+            file: file,
+            image: images[index],
+            annotations: imageAnnotations[index]
+        }));
+
+        combinedFiles.sort((a, b) => 
+            a.file.name.localeCompare(b.file.name, undefined, {numeric: true})
+        );
+
+        // 更新所有陣列
+        imageFiles = combinedFiles.map(item => item.file);
+        images = combinedFiles.map(item => item.image);
+        const newAnnotations = {};
+        combinedFiles.forEach((item, index) => {
+            if (item.annotations) {
+                newAnnotations[index] = item.annotations;
+            }
+        });
+        imageAnnotations = newAnnotations;
+
+        // 選擇新添加的第一張圖片
+        const firstNewImageIndex = imageFiles.findIndex(file => 
+            uniqueNewFiles.some(newFile => newFile.name === file.name)
+        );
+        if (firstNewImageIndex !== -1) {
+            loadImage(firstNewImageIndex);
+        }
+
+        updateImageList();
+        saveState(); // 保存狀態
+    } catch (error) {
+        console.error('Error loading images:', error);
+        alert('載入圖片時發生錯誤');
+    }
+
+    this.value = '';
 });
 
 // Load image onto canvas
@@ -102,49 +146,42 @@ function loadImage(index) {
 // Draw bounding boxes
 function drawBoundingBoxes() {
     currentBoxes.forEach((box, index) => {
-        // 找到對應的類別
-        const classObj = classes.find(cls => cls.index === box.class);
-        const boxColor = classObj ? classObj.color : "#ff0000";
-        const label = classObj ? classObj.name : `Class ${box.class}`;
+        // 取得類別 ID 和類別物件
+        const classId = box.class;
+        const classObj = classes[classId];
+        if (!classObj) {
+            console.error('Class not found for id:', classId);
+            return;
+        }
+        const boxColor = classObj.color;
         
-        ctx.strokeStyle = boxColor;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([]); // 確保是實線
-        
-        const x = box.x * canvas.width;
-        const y = box.y * canvas.height;
+        // 從中心點座標計算左上角座標
+        const x = (box.x - box.width/2) * canvas.width;
+        const y = (box.y - box.height/2) * canvas.height;
         const width = box.width * canvas.width;
         const height = box.height * canvas.height;
         
-        // 繪製矩形框
+        // 繪製框框
+        ctx.strokeStyle = boxColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
         ctx.strokeRect(x, y, width, height);
         
-        // 繪製標籤背景
+        // 繪製標籤背景和文字
         ctx.font = '14px Arial';
-        const textMetrics = ctx.measureText(label);
-        const textWidth = textMetrics.width;
-        const textHeight = 20; // 固定高度
-        const padding = 4; // 文字周圍的內邊距
-        
-        // 確保標籤不會超出畫布上方
-        const labelY = y + textHeight;
+        // 根據 showClassId 切換顯示
+        const labelText = showClassId ? String(classId) : classObj.name;
+        console.log('showClassId:', showClassId, 'labelText:', labelText); // 添加除錯訊息
+        const textWidth = ctx.measureText(labelText).width;
         
         // 繪製標籤背景
         ctx.fillStyle = boxColor;
-        ctx.fillRect(
-            x - 1, // 稍微向左偏移以對齊邊框
-            labelY - textHeight,
-            textWidth + (padding * 2),
-            textHeight
-        );
-        
+        // ctx.fillRect(x - 1, y - 20, textWidth + 10, 20);
+        ctx.fillRect(x - 1, y, textWidth + 10, 20);
+
         // 繪製標籤文字
         ctx.fillStyle = 'white';
-        ctx.fillText(
-            label,
-            x + padding,
-            labelY - 6 // 微調以使文字垂直置中
-        );
+        ctx.fillText(labelText, x + 5, y + 15);
         
         // 添加刪除按鈕
         const btnSize = 20;
@@ -165,7 +202,6 @@ function drawBoundingBoxes() {
         ctx.lineTo(btnX - 5, btnY + 5);
         ctx.stroke();
 
-        // 更新刪除按鈕的點擊區域
         const deleteButtonPath = new Path2D();
         deleteButtonPath.arc(btnX, btnY, btnSize/2, 0, Math.PI * 2);
         box.deleteButtonPath = deleteButtonPath;
@@ -245,36 +281,40 @@ canvas.addEventListener("mouseup", (event) => {
     const currentX = (event.clientX - rect.left) * scaleX;
     const currentY = (event.clientY - rect.top) * scaleY;
 
-    isDash = false; // 立即停止虛線繪製
+    isDash = false;
 
-    // 計算標註框的座標和大小（相對於畫布的比例）
-    const x = Math.min(startX, currentX) / canvas.width;
-    if (x < 0) x = 0;
-    const y = Math.min(startY, currentY) / canvas.height;
-    if (y < 0) y = 0;
-    const width = Math.abs(startX - currentX) / canvas.width;
-    const height = Math.abs(startY - currentY) / canvas.height;
+    // 計算框的左上角和尺寸
+    const left = Math.min(startX, currentX);
+    const top = Math.min(startY, currentY);
+    const width = Math.abs(startX - currentX);
+    const height = Math.abs(startY - currentY);
 
-    // 只有當框有實際大小時才添加
+    // 轉換為中心點座標
+    const centerX = (left + width/2) / canvas.width;
+    const centerY = (top + height/2) / canvas.height;
+    const normalizedWidth = width / canvas.width;
+    const normalizedHeight = height / canvas.height;
+
     if (width > 0 && height > 0) {
-        const classIndex = currentClass ? currentClass.index : 0;
-        const newBox = { class: classIndex, x, y, width, height };
+        const classIndex = classes.indexOf(currentClass).toString();
+        const newBox = {
+            class: classIndex,
+            x: centerX,
+            y: centerY,
+            width: normalizedWidth,
+            height: normalizedHeight
+        };
         currentBoxes.push(newBox);
         
-        // 保存到當前圖片的標註
         if (currentImageIndex !== undefined) {
             imageAnnotations[currentImageIndex] = [...currentBoxes];
         }
 
-        // 重繪畫布和標註
         const img = images[currentImageIndex];
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         drawBoundingBoxes();
-        
-        // 強制更新文字方塊
         updateAnnotations();
         
-        // 延遲設置 isDrawing 為 false
         setTimeout(() => {
             isDrawing = false;
         }, 100);
@@ -287,7 +327,6 @@ canvas.addEventListener("mouseup", (event) => {
 function updateAnnotations() {
     if (!annotationsTextarea) return;
     
-    // 確保 currentBoxes 存在且是陣列
     if (!Array.isArray(currentBoxes)) {
         console.error('currentBoxes is not an array:', currentBoxes);
         return;
@@ -295,15 +334,13 @@ function updateAnnotations() {
     
     try {
         const annotations = currentBoxes.map(box => {
-            // 確保所有必要的值都存在
-            if (box.class === undefined || box.x === undefined || 
-                box.y === undefined || box.width === undefined || 
-                box.height === undefined) {
+            if (!box.x || !box.y || !box.width || !box.height) {
                 console.error('Invalid box data:', box);
                 return '';
             }
+            // 直接使用 box.class，它已經是正確的類別 ID
             return `${box.class} ${box.x.toFixed(6)} ${box.y.toFixed(6)} ${box.width.toFixed(6)} ${box.height.toFixed(6)}`;
-        }).filter(text => text !== ''); // 過濾掉無效的標註
+        }).filter(text => text !== '');
         
         annotationsTextarea.value = annotations.join('\n');
     } catch (error) {
@@ -345,7 +382,7 @@ downloadButton.addEventListener("click", () => {
 function showAddClassDialog() {
     document.getElementById('addClassDialog').style.display = 'block';
     document.getElementById('newClassName').value = '';
-    document.getElementById('newClassColor').value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    document.getElementById('newClassColor').value = generateRandomColor();
 }
 
 function closeAddClassDialog() {
@@ -357,27 +394,20 @@ function addClassConfirm() {
     const color = document.getElementById('newClassColor').value;
     
     if (name) {
-        // 檢查類別名稱是否已存在
         const existingClass = classes.find(cls => cls.name === name);
         if (existingClass) {
             alert('類別名稱已存在！');
             return;
         }
 
-        // 找出目前最大的類別索引
-        const maxIndex = classes.reduce((max, cls) => {
-            return Math.max(max, cls.index || 0);
-        }, -1);
-
-        // 添加新類別，使用最大索引 + 1
         classes.push({ 
             name: name, 
-            color: color,
-            index: maxIndex + 1
+            color: color
         });
 
         updateClassList();
         closeAddClassDialog();
+        saveState(); // 保存狀態
     }
 }
 
@@ -394,12 +424,10 @@ function updateClassList() {
         const div = document.createElement('div');
         div.className = 'class-item';
         
-        // 如果只有一個類別或當前類別被選中，添加選中樣式
         if (currentClass === cls || (classes.length === 1 && !currentClass)) {
             div.classList.add('selected');
             div.style.backgroundColor = '#e3f2fd';
             div.style.borderLeft = '4px solid #1976d2';
-            // 如果只有一個類別且尚未選中，自動選中它
             if (classes.length === 1 && !currentClass) {
                 currentClass = cls;
             }
@@ -415,15 +443,17 @@ function updateClassList() {
                 onchange="updateClassColor(${index}, this.value)"
                 class="color-picker">
             <div class="class-info">
-                <span class="class-name" title="${cls.name}">${cls.name}</span>
+                <span class="class-name" title="${index}: ${cls.name}">${cls.name}</span>
             </div>
         `;
         
-        div.addEventListener('click', (e) => {
-            if (!e.target.closest('.color-picker') && !e.target.closest('.delete-btn')) {
-                selectClass(index);
-            }
+        // 為 class-info 添加點擊事件
+        const classInfo = div.querySelector('.class-info');
+        classInfo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectClass(index);
         });
+
         classList.appendChild(div);
     });
 }
@@ -448,29 +478,51 @@ function selectClass(index) {
 
 // 修改刪除類別函數
 function removeClass(index) {
-    const removedClass = classes[index];
-    
-    // 刪除所有圖片中使用該類別的標註
+    // 更新所有圖片中的標註
     Object.keys(imageAnnotations).forEach(imageIndex => {
         const annotations = imageAnnotations[imageIndex];
         if (annotations) {
-            // 移除使用被刪除類別的標註
-            imageAnnotations[imageIndex] = annotations.filter(box => 
-                box.class !== removedClass.index
-            );
+            // 先過濾掉被刪除的類別的標註
+            imageAnnotations[imageIndex] = annotations.filter(box => {
+                return parseInt(box.class) !== index;
+            });
+            
+            // 更新剩餘標註的類別索引
+            imageAnnotations[imageIndex] = imageAnnotations[imageIndex].map(box => {
+                const boxClassId = parseInt(box.class);
+                if (boxClassId > index) {
+                    return {
+                        ...box,
+                        class: (boxClassId - 1).toString()
+                    };
+                }
+                return box;
+            });
         }
     });
 
     // 更新當前圖片的標註
-    currentBoxes = currentBoxes.filter(box => 
-        box.class !== removedClass.index
-    );
-
+    currentBoxes = currentBoxes.filter(box => {
+        return parseInt(box.class) !== index;
+    });
+    
+    // 更新當前圖片標註的類別索引
+    currentBoxes = currentBoxes.map(box => {
+        const boxClassId = parseInt(box.class);
+        if (boxClassId > index) {
+            return {
+                ...box,
+                class: (boxClassId - 1).toString()
+            };
+        }
+        return box;
+    });
+    
     // 刪除類別
     classes.splice(index, 1);
     
     // 如果刪除的是當前選中的類別
-    if (currentClass && currentClass === removedClass) {
+    if (currentClass && classes.indexOf(currentClass) === index) {
         currentClass = null;
     }
 
@@ -548,18 +600,6 @@ function updateImageList() {
 function deleteImage(index) {
     if (index < 0 || index >= images.length) return;
 
-    // 如果刪除當前圖片，先切換到其他圖片
-    if (index === currentImageIndex) {
-        const newIndex = index === images.length - 1 ? index - 1 : index + 1;
-        if (newIndex >= 0) {
-            loadImage(newIndex);
-        } else {
-            currentImageIndex = undefined;
-            currentBoxes = [];
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-    }
-
     // 刪除圖片相關資料
     images.splice(index, 1);
     imageFiles.splice(index, 1);
@@ -576,12 +616,24 @@ function deleteImage(index) {
     });
     imageAnnotations = newAnnotations;
 
+    // 選擇新的圖片
+    if (images.length > 0) {
+        const newIndex = index >= images.length ? images.length - 1 : index;
+        loadImage(newIndex);
+    } else {
+        currentImageIndex = undefined;
+        currentBoxes = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
     updateImageList();
+    saveState(); // 保存狀態
 }
 
-// 添加下載類別檔案的功能
+// 修改下載類別檔案的功能
 document.getElementById('download-classes').addEventListener("click", () => {
-    const classesText = classes.map((cls, index) => `${index} ${cls.name}`).join("\n");
+    // 只輸出類別名稱，每行一個
+    const classesText = classes.map(cls => cls.name).join("\n");
     const blob = new Blob([classesText], { type: "text/plain" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -590,7 +642,7 @@ document.getElementById('download-classes').addEventListener("click", () => {
     URL.revokeObjectURL(link.href);
 });
 
-// 添加滑鼠移動事件來改變游標樣式
+// 添加滑鼠移��事件來改變游標樣式
 canvas.addEventListener("mousemove", (event) => {
     if (isDrawing) return;
 
@@ -675,7 +727,7 @@ document.getElementById('download-all-annotations').addEventListener("click", ()
     });
 });
 
-// 修改標註文本區域的樣
+// 修改標註文本域的樣
 const textareaStyle = document.createElement('style');
 textareaStyle.textContent = `
     #annotations {
@@ -706,78 +758,88 @@ document.getElementById('import-input').addEventListener('change', async (e) => 
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    // 檢查是否為 zip 檔
-    if (files[0].name.endsWith('.zip')) {
-        const zip = await JSZip.loadAsync(files[0]);
-        
-        // 處理 zip 中的檔案
-        for (let filename in zip.files) {
-            if (filename.endsWith('.txt')) {
-                const content = await zip.files[filename].async('text');
-                const imageName = filename.replace('.txt', '');
+    try {
+        // 處理 zip 或單個文件
+        if (files[0].name.endsWith('.zip')) {
+            const zip = await JSZip.loadAsync(files[0]);
+            
+            for (let filename in zip.files) {
+                if (filename.endsWith('.txt')) {
+                    const content = await zip.files[filename].async('text');
+                    const imageName = filename.replace('.txt', '');
+                    
+                    const imageIndex = imageFiles.findIndex(file => 
+                        file.name.replace(/\.[^/.]+$/, '') === imageName
+                    );
+
+                    if (imageIndex !== -1) {
+                        processAnnotationContent(content, imageIndex);
+                    }
+                }
+            }
+        } else {
+            for (let file of files) {
+                if (!file.name.endsWith('.txt')) continue;
+
+                const content = await file.text();
+                const imageName = file.name.replace('.txt', '');
                 
-                // 尋找對應的圖片
                 const imageIndex = imageFiles.findIndex(file => 
                     file.name.replace(/\.[^/.]+$/, '') === imageName
                 );
 
                 if (imageIndex !== -1) {
-                    // 解析標註內容
-                    const annotations = content.split('\n')
-                        .filter(line => line.trim())
-                        .map(line => {
-                            const [classId, x, y, width, height] = line.split(' ').map(Number);
-                            return { class: classId, x, y, width, height };
-                        });
-                    
-                    imageAnnotations[imageIndex] = annotations;
+                    processAnnotationContent(content, imageIndex);
                 }
             }
         }
-    } else {
-        // 處理單個 txt 檔
-        for (let file of files) {
-            if (!file.name.endsWith('.txt')) continue;
 
-            const content = await file.text();
-            const imageName = file.name.replace('.txt', '');
-            
-            // 尋找對應的圖片
-            const imageIndex = imageFiles.findIndex(file => 
-                file.name.replace(/\.[^/.]+$/, '') === imageName
-            );
-
-            if (imageIndex !== -1) {
-                // 解析標註內容
-                const annotations = content.split('\n')
-                    .filter(line => line.trim())
-                    .map(line => {
-                        const [classId, x, y, width, height] = line.split(' ').map(Number);
-                        return { class: classId, x, y, width, height };
-                    });
-                
-                imageAnnotations[imageIndex] = annotations;
-            }
+        // 更新當前圖片的顯示
+        if (currentImageIndex !== undefined) {
+            currentBoxes = imageAnnotations[currentImageIndex] || [];
+            drawBoundingBoxes();
+            updateAnnotations();
         }
+
+        alert('標註匯入完成');
+    } catch (error) {
+        console.error('Error importing annotations:', error);
+        alert('匯入標註時發生錯誤');
     }
 
-    // 更新當前圖片的顯示
-    if (currentImageIndex !== undefined) {
-        currentBoxes = imageAnnotations[currentImageIndex] || [];
-        drawBoundingBoxes();
-        updateAnnotations();
-    }
-
-    e.target.value = ''; // 清空輸入
-    alert('標註匯入完成');
+    e.target.value = '';
 });
 
-// 生成隨機顏色函數
+// 修改處理標註內容的輔助函數
+function processAnnotationContent(content, imageIndex) {
+    const annotations = content.split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+            const [classId, x, y, width, height] = line.split(' ').map(Number);
+            // 直接使用原始的類別 ID
+            return {
+                class: classId.toString(), // 轉為字串以保持一致性
+                x, y, width, height
+            };
+        });
+    
+    imageAnnotations[imageIndex] = annotations;
+}
+
+// 修改生成隨機顏色的函數
 function generateRandomColor() {
-    const hue = Math.random() * 360;
-    const saturation = 70 + Math.random() * 30; // 70-100%
-    const lightness = 35 + Math.random() * 15;  // 35-50%
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    // 生成隨機的 RGB 值
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    
+    // 轉換為十六進制格式
+    const rHex = r.toString(16).padStart(2, '0');
+    const gHex = g.toString(16).padStart(2, '0');
+    const bHex = b.toString(16).padStart(2, '0');
+    
+    // 返回 #RRGGBB 格式的顏色
+    return `#${rHex}${gHex}${bHex}`;
 }
 
 // 添加匯入類別功能
@@ -792,15 +854,12 @@ document.getElementById('import-classes-input').addEventListener('change', async
     try {
         const content = await file.text();
         const newClasses = [];
-        const usedColors = new Set(classes.map(cls => cls.color));
+        const usedColors = new Set();
         
-        // 解析類別檔案
-        content.split('\n').forEach(line => {
-            line = line.trim();
-            if (!line) return;
-            
-            const [id, name] = line.split(' ');
-            if (name) {
+        // 解析類別檔案，每行一個類別名稱
+        content.split('\n').forEach((line, index) => {
+            const className = line.trim();
+            if (className) {
                 // 生成不重複的顏色
                 let color;
                 do {
@@ -808,20 +867,61 @@ document.getElementById('import-classes-input').addEventListener('change', async
                 } while (usedColors.has(color));
                 usedColors.add(color);
 
-                newClasses[parseInt(id)] = {
-                    name: name,
-                    color: color
-                };
+                newClasses.push({
+                    name: className,
+                    color: color,
+                    index: index
+                });
             }
         });
 
-        // 過濾掉空值並更新類別陣列
-        classes = newClasses.filter(cls => cls);
-
-        // 更新面
-        updateClassList();
+        classes = newClasses;
         
-        // 如果有圖片正在示，重新繪製標註
+        // 更新類別列表
+        const classList = document.querySelector('.right-panel .class-list');
+        if (classList) {
+            classList.innerHTML = '';
+            classes.forEach((cls, index) => {
+                const div = document.createElement('div');
+                div.className = 'class-item';
+                div.innerHTML = `
+                    <div class="class-actions">
+                        <button class="action-btn delete-btn" onclick="removeClass(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <input type="color" value="${cls.color}" 
+                        onchange="updateClassColor(${index}, this.value)"
+                        class="color-picker">
+                    <div class="class-info">
+                        <span class="class-name" title="${index}: ${cls.name}">${cls.name}</span>
+                    </div>
+                `;
+
+                // 為整個項目添加點擊事件
+                div.addEventListener('click', (e) => {
+                    if (!e.target.closest('.color-picker') && !e.target.closest('.delete-btn')) {
+                        selectClass(index);
+                    }
+                });
+
+                // 為 class-info 添加點擊事件
+                const classInfo = div.querySelector('.class-info');
+                classInfo.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectClass(index);
+                });
+
+                classList.appendChild(div);
+            });
+        }
+
+        // 如果只有一個類別，自動選擇它
+        if (classes.length === 1) {
+            selectClass(0);
+        }
+
+        // 重繪前圖片
         if (currentImageIndex !== undefined && images[currentImageIndex]) {
             ctx.drawImage(images[currentImageIndex], 0, 0, canvas.width, canvas.height);
             drawBoundingBoxes();
@@ -833,7 +933,7 @@ document.getElementById('import-classes-input').addEventListener('change', async
         alert('匯入類別時發生錯誤');
     }
 
-    e.target.value = ''; // 清空輸入
+    e.target.value = '';
 });
 
 // 添加新的樣式
@@ -865,10 +965,6 @@ buttonStyle.textContent = `
         background-color: #d32f2f;
     }
 
-    .edit-btn:hover {
-        background-color: #388E3C;
-    }
-
     .class-actions, .image-actions {
         display: flex;
         gap: 6px;
@@ -888,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 修改左側面板切換
     leftToggle.addEventListener('click', () => {
         leftPanel.classList.toggle('collapsed');
-        setTimeout(adjustCanvasSize, 300); // 等待過渡動畫完成
+        setTimeout(adjustCanvasSize, 300); // 等待過渡畫完成
     });
 
     // 修改右側面板切換
@@ -901,14 +997,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 修改 adjustCanvasSize 函數
 function adjustCanvasSize() {
-    if (!images[currentImageIndex]) return;
-
-    const img = images[currentImageIndex];
     const container = document.getElementById('image-container');
-    
-    // 設算容器的可用空間
     const containerWidth = container.clientWidth - 40;  // 減去 padding
     const containerHeight = container.clientHeight - 40;
+
+    if (!images[currentImageIndex]) {
+        // 當沒有圖片時，設置畫布為容器大小
+        canvas.width = containerWidth;
+        canvas.height = containerHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+    }
+
+    const img = images[currentImageIndex];
     
     // 計算圖片應該的大小，保持比例
     const imageRatio = img.width / img.height;
@@ -917,61 +1018,46 @@ function adjustCanvasSize() {
     let width, height;
     
     if (imageRatio > containerRatio) {
-        // 圖片較寬，以寬度為基準
         width = containerWidth;
         height = containerWidth / imageRatio;
     } else {
-        // 圖片較高，以高度為基準
         height = containerHeight;
         width = containerHeight * imageRatio;
     }
     
-    // 設定畫布大小
     canvas.width = width;
     canvas.height = height;
     
-    // 清並重繪
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     drawBoundingBoxes();
 }
 
-// 修改圖片容器的樣式
-// const containerStyle = document.createElement('style');
-// containerStyle.textContent = `
-//     #image-container {
-//         flex: 1;
-//         display: flex;
-//         justify-content: center;
-//         align-items: center;
-//         padding: 20px;
-//         background: #f5f5f5;
-//         border-radius: 8px;
-//         position: relative;
-//         overflow: hidden;  /* 防止內容溢出 */
-//     }
-
-//     #canvas {
-//         background: white;
-//         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-//     }
-
-//     .center-panel {
-//         display: flex;
-//         flex-direction: column;
-//         flex: 1;
-//         overflow: hidden;
-//         position: relative;
-//     }
-// `;
-// document.head.appendChild(containerStyle);
 
 // 添加視窗大小改變時的處理
 window.addEventListener('resize', () => {
-    if (currentImageIndex !== undefined) {
-        adjustCanvasSize();
-    }
+    adjustCanvasSize();
 });
+
+// 在 DOMContentLoaded 時初始化 canvas 大小
+document.addEventListener('DOMContentLoaded', () => {
+    adjustCanvasSize();
+});
+
+// 在恢復狀態後也要調整 canvas 大小
+async function restoreState() {
+    try {
+        const savedState = localStorage.getItem('labelingState');
+        if (!savedState) {
+            adjustCanvasSize(); // 如果沒有保存的狀態，也要調整 canvas 大小
+            return;
+        }
+        // ... 其他恢復狀態的代碼 ...
+    } catch (error) {
+        console.error('Error restoring state:', error);
+        adjustCanvasSize(); // 如果恢復失敗，也要調整 canvas 大小
+    }
+}
 
 // 修改 canvas 的點擊事件處理
 canvas.addEventListener("click", (event) => {
@@ -1009,46 +1095,153 @@ canvas.addEventListener("click", (event) => {
     });
 });
 
-// 更新圖片項目的樣式
-// const imageItemStyle = document.createElement('style');
-// imageItemStyle.textContent = `
-//     .image-item {
-//         display: flex;
-//         justify-content: space-between;
-//         align-items: center;
-//         padding: 12px;
-//         margin: 5px 0;
-//         background: white;
-//         border-radius: 4px;
-//         cursor: pointer;
-//         transition: all 0.2s ease;
-//     }
 
-//     .image-item:hover {
-//         background: #f5f5f5;
-//     }
+// 添加保存狀態的函數
+function saveState() {
+    try {
+        // 將圖片資料轉換為 URL
+        const imageDataUrls = images.map(img => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+            return tempCanvas.toDataURL();
+        });
 
-//     .image-item.selected {
-//         background: #e3f2fd;
-//         border-left: 4px solid #1976d2;
-//     }
+        const state = {
+            imageFiles: imageFiles.map(file => ({
+                name: file.name,
+                type: file.type,
+                lastModified: file.lastModified
+            })),
+            imageDataUrls,
+            imageAnnotations,
+            classes,
+            currentImageIndex,
+            currentClass: currentClass ? classes.indexOf(currentClass) : null
+        };
 
-//     .image-info {
-//         display: flex;
-//         align-items: center;
-//         flex: 1;
-//         overflow: hidden;
-//     }
+        localStorage.setItem('labelingState', JSON.stringify(state));
+    } catch (error) {
+        console.error('Error saving state:', error);
+    }
+}
+// 修改恢復狀態的函數
+async function restoreState() {
+    try {
+        const savedState = localStorage.getItem('labelingState');
+        if (!savedState) return;
 
-//     .image-name {
-//         overflow: hidden;
-//         text-overflow: ellipsis;
-//         white-space: nowrap;
-//     }
+        const state = JSON.parse(savedState);
 
-//     .image-actions {
-//         display: flex;
-//         gap: 6px;
-//     }
-// `;
-// document.head.appendChild(imageItemStyle);
+        // 恢復類別
+        classes = state.classes;
+        currentClass = state.currentClass !== null ? classes[state.currentClass] : null;
+
+        // 恢復圖片
+        images = [];
+        for (let dataUrl of state.imageDataUrls) {
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+            images.push(img);
+        }
+
+        // 恢復其他資料
+        imageFiles = state.imageFiles;
+        imageAnnotations = state.imageAnnotations;
+        currentImageIndex = state.currentImageIndex;
+        currentBoxes = imageAnnotations[currentImageIndex] || [];
+
+        // 更新界面
+        updateClassList();
+        updateImageList();
+        updateAnnotations();
+        if (currentImageIndex !== undefined && images[currentImageIndex]) {
+            adjustCanvasSize();
+            drawBoundingBoxes();
+        }
+    } catch (error) {
+        console.error('Error restoring state:', error);
+    }
+}
+
+// 在適當的地方保存狀態
+function addStateHandlers() {
+    // 當頁面要失去焦點時保存狀態
+    window.addEventListener('blur', saveState);
+    
+    // 當頁面關閉時保存狀態
+    window.addEventListener('beforeunload', saveState);
+    
+    // 當頁面載入時恢復狀態
+    window.addEventListener('load', restoreState);
+}
+
+// 在頁面載入時初始化
+document.addEventListener('DOMContentLoaded', addStateHandlers);
+
+// 在資料變更的地方也要保存狀態
+// 例如在 loadImage, updateAnnotations 等函數的最後添加：
+// saveState();
+
+// 修改清除狀態的函數
+function clearState() {
+    if (confirm('確定要清除所有資料嗎？這個操作無法復原。')) {
+        localStorage.removeItem('labelingState');
+        images = [];
+        imageFiles = [];
+        imageAnnotations = {};
+        classes = [];
+        currentClass = null;
+        currentImageIndex = undefined;
+        currentBoxes = [];
+        
+        // 清除畫布並調整大小
+        adjustCanvasSize();
+        
+        // 更新界面
+        updateClassList();
+        updateImageList();
+        updateAnnotations();
+        
+        alert('所有資料已清除');
+    }
+}
+
+// 添加切換標註顯示的函數
+function toggleLabelDisplay() {
+    showClassId = !showClassId;
+    // 添加除錯訊息
+    // alert('Toggle label display, showClassId:' + showClassId);
+    
+    // 重新繪製畫布
+    if (currentImageIndex !== undefined && images[currentImageIndex]) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(images[currentImageIndex], 0, 0, canvas.width, canvas.height);
+        drawBoundingBoxes();
+    }
+}
+
+// 綁定清除按鈕事件
+document.getElementById('clear-state').addEventListener('click', clearState);
+
+function showHelpDialog() {
+    document.getElementById('helpDialog').style.display = 'block';
+}
+
+function closeHelpDialog() {
+    document.getElementById('helpDialog').style.display = 'none';
+}
+
+// 添加按鈕點擊事件
+document.getElementById('help').addEventListener('click', showHelpDialog);
+
+// 添加切換標註
+document.getElementById('toggle-label').addEventListener('click', toggleLabelDisplay);
+
+
