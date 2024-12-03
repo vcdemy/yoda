@@ -1,6 +1,6 @@
 # YODA
 
-YODA是**YO**LO **DA**TA Labeler的縮寫。
+YODA是<ins>YO</ins>LO **DA**TA Labeler的縮寫。
 
 它是一個用來簡單的標註YOLO資料的工具。
 
