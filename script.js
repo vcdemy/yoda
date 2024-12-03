@@ -728,26 +728,26 @@ document.getElementById('download-all-annotations').addEventListener("click", ()
 });
 
 // 修改標註文本域的樣
-const textareaStyle = document.createElement('style');
-textareaStyle.textContent = `
-    #annotations {
-        width: 100%;
-        flex: 1;
-        min-height: 200px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-family: monospace;
-        resize: none;
-        white-space: pre;           /* 使用 pre 格式保持換行和空格 */
-        overflow-x: auto;           /* 允許水平捲動 */
-        overflow-y: auto;           /* 允許垂直捲動 */
-        font-size: 14px;            /* 設定合適的字體大小 */
-        line-height: 1.5;           /* 設定行高 */
-        tab-size: 4;                /* 設定 tab 的寬度 */
-    }
-`;
-document.head.appendChild(textareaStyle);
+// const textareaStyle = document.createElement('style');
+// textareaStyle.textContent = `
+//     #annotations {
+//         width: 100%;
+//         flex: 1;
+//         min-height: 200px;
+//         padding: 10px;
+//         border: 1px solid #ddd;
+//         border-radius: 4px;
+//         font-family: monospace;
+//         resize: none;
+//         white-space: pre;           /* 使用 pre 格式保持換行和空格 */
+//         overflow-x: auto;           /* 允許水平捲動 */
+//         overflow-y: auto;           /* 允許垂直捲動 */
+//         font-size: 14px;            /* 設定合適的字體大小 */
+//         line-height: 1.5;           /* 設定行高 */
+//         tab-size: 4;                /* 設定 tab 的寬度 */
+//     }
+// `;
+// document.head.appendChild(textareaStyle);
 
 // 添加匯入標註功能
 document.getElementById('import-annotations').addEventListener('click', () => {
@@ -937,41 +937,41 @@ document.getElementById('import-classes-input').addEventListener('change', async
 });
 
 // 添加新的樣式
-const buttonStyle = document.createElement('style');
-buttonStyle.textContent = `
-    .action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        color: white;
-        transition: all 0.2s ease;
-    }
+// const buttonStyle = document.createElement('style');
+// buttonStyle.textContent = `
+//     .action-btn {
+//         display: flex;
+//         align-items: center;
+//         justify-content: center;
+//         width: 32px;
+//         height: 32px;
+//         padding: 0;
+//         border: none;
+//         border-radius: 4px;
+//         cursor: pointer;
+//         color: white;
+//         transition: all 0.2s ease;
+//     }
 
-    .action-btn i {
-        font-size: 14px;
-    }
+//     .action-btn i {
+//         font-size: 14px;
+//     }
 
-    .load-btn:hover {
-        background-color: #1976D2;
-    }
+//     .load-btn:hover {
+//         background-color: #1976D2;
+//     }
 
-    .delete-btn:hover {
-        background-color: #d32f2f;
-    }
+//     .delete-btn:hover {
+//         background-color: #d32f2f;
+//     }
 
-    .class-actions, .image-actions {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-    }
-`;
-document.head.appendChild(buttonStyle);
+//     .class-actions, .image-actions {
+//         display: flex;
+//         gap: 6px;
+//         align-items: center;
+//     }
+// `;
+// document.head.appendChild(buttonStyle);
 
 // 面板切換功能
 document.addEventListener('DOMContentLoaded', function() {
