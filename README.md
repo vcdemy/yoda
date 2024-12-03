@@ -15,5 +15,6 @@ YODA是<ins>**YO**</ins>LO <ins>**DA**</ins>TA Labeler的縮寫。
 * [Label Studio](https://labelstud.io/)
 * [Roboflow](https://roboflow.com/)
 * [VGG Image Annotator](https://www.robots.ox.ac.uk/~vgg/software/via/)
+* [CVAT](https://github.com/cvat-ai/cvat)
 * [makesense.ai](https://github.com/SkalskiP/make-sense)
 * [rectlabel](https://rectlabel.com/)
