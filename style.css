@@ -191,7 +191,7 @@ canvas {
     border-radius: 4px;
     font-family: monospace;
     resize: none;
-    white-space: nowrap;  /* 防止文字換行 */
+    white-space: pre;  /* 防止文字換行 */
     overflow-x: auto;     /* 允許水平捲動 */
     overflow-y: auto;     /* 允許垂直捲動 */
     box-sizing: border-box; /* 確保 padding 不會增加寬度 */
