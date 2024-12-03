@@ -1,18 +1,20 @@
 body {
-    font-family: Arial, sans-serif;
     margin: 0;
-    padding: 20px;
-    text-align: center;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: Arial, sans-serif;
     min-width: 600px;
-    overflow-x: auto;
+    overflow: hidden;
 }
 canvas {
     border: 1px solid #ccc;
     cursor: crosshair;
 }
-#controls {
+/* #controls {
     margin-top: 10px;
-}
+} */
 #image-container {
     margin: 20px auto;
     max-width: 90%;
@@ -45,13 +47,15 @@ canvas {
 .class-item, .image-item {
     display: flex;
     align-items: center;
-    padding: 8px;
+    height: 36px;
+    padding: 0 8px;
     margin: 5px 0;
     background: white;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
     gap: 8px;
+    box-sizing: border-box;
 }
 body {
     margin: 0;
@@ -59,6 +63,9 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    font-family: Arial, sans-serif;
+    min-width: 600px;
+    overflow: hidden;
 }
 
 .main-container {
@@ -68,6 +75,7 @@ body {
     min-width: 600px;
     position: relative;
     height: calc(100vh - 54px);
+    box-sizing: border-box;
 }
 
 /* 左側面板 */
@@ -132,18 +140,18 @@ body {
     max-height: 100%;
     background: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    /* z-index: 1; */
 }
 
 .image-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 8px;
     margin: 5px 0;
     background: white;
     border-radius: 4px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 8px;
 }
 
 .image-item.selected {
@@ -158,19 +166,6 @@ body {
     white-space: nowrap;
 }
 
-#annotations {
-    width: 100%;
-    flex: 1;
-    min-height: 200px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: monospace;
-    resize: none;
-    white-space: nowrap;  /* 防止文字換行 */
-    overflow-x: auto;     /* 允許水平捲動 */
-    overflow-y: auto;     /* 允許垂直捲動 */
-}
 
 /* 美化按鈕 */
 .action-btn {
@@ -181,10 +176,6 @@ body {
     cursor: pointer;
     color: white;
 }
-
-.edit-btn { background-color: #4CAF50; }
-.delete-btn { background-color: #f44336; }
-.load-btn { background-color: #2196F3; }
 
 .action-btn:hover {
     opacity: 0.8;
@@ -213,30 +204,33 @@ body {
     padding: 15px;
     margin-bottom: 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-/* 控制按鈕區域 */
-#controls {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 15px;
-    width: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
-#controls .action-btn {
-    width: 100%;
-    padding: 8px;
-    font-size: 14px;
-    text-align: center;
+/* 確保檔案列表可以完整顯示 */
+.panel-section:last-child {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
+
+.panel-section:last-child .image-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
 
 /* 標註文本區域 */
 #annotations {
-    width: 100%;
+    width: calc(100% - 20px);
     flex: 1;
     min-height: 200px;
     padding: 10px;
+    margin: 0 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-family: monospace;
@@ -244,6 +238,7 @@ body {
     white-space: nowrap;  /* 防止文字換行 */
     overflow-x: auto;     /* 允許水平捲動 */
     overflow-y: auto;     /* 允許垂直捲動 */
+    box-sizing: border-box; /* 確保 padding 不會增加寬度 */
 }
 
 /* 類別輸入區域 */
@@ -269,10 +264,12 @@ body {
 
 /* 列表樣式 */
 .class-list, .image-list {
-    max-height: 300px;
+    flex: 1;
     overflow-y: auto;
     border: 1px solid #eee;
     border-radius: 4px;
+    padding: 4px;
+    margin-right: 4px;
 }
 
 /* 按鈕樣式 */
@@ -318,6 +315,11 @@ h3 {
     z-index: 1000;
 }
 
+.dialog button.action-btn {
+    width: 100px;
+    padding: 6px 12px;
+}
+
 /* 類別項目樣式 */
 .class-item {
     display: flex;
@@ -358,24 +360,44 @@ h3 {
 /* 標題樣式 */
 .left-panel h3 {
     margin: 0;
-    padding: 0;
+    padding: 5px 10px;
     width: 100%;
 }
 
 .main-header {
     background-color: #2196F3;
     color: white;
-    padding: 15px 0;
+    padding: 15px 40px;
     margin: 0;
     width: 100%;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     min-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
 }
 
 .main-header h1 {
     margin: 0;
     font-size: 24px;
+}
+
+/* 社交連結樣式 */
+.social-links {
+    display: flex;
+    gap: 15px;
+}
+
+.social-link {
+    color: white;
+    font-size: 24px;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.social-link:hover {
+    opacity: 0.8;
 }
 
 /* 調整主容器的樣式 */
@@ -391,7 +413,7 @@ h3 {
     box-sizing: border-box;
 } */
 
-#controls {
+/* #controls {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -402,13 +424,10 @@ h3 {
 #controls .action-btn {
     width: 100%;
     padding: 8px;
-    margin: 0; /* 移除 margin */
-}
+    margin: 0;
+} 
+*/
 
-#annotations {
-    width: 100%;
-    box-sizing: border-box; /* 確保 padding 不會增加寬度 */
-}
 
 #import-classes {
     background-color: #9C27B0; /* 紫色 */
@@ -456,7 +475,7 @@ h3 {
     margin-left: -300px;
 }
 
-/* 確保按鈕在面板收起時仍然可見且可點擊 */
+/* 確保按鈕在面板收起仍然可見且可點擊 */
 .left-panel.collapsed .left-toggle,
 .right-panel.collapsed .right-toggle {
     position: absolute;
@@ -497,45 +516,6 @@ h3 {
     transform: rotate(0deg);
 }
 
-/* .zoom-controls {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 5px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 100;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.zoom-btn {
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.zoom-btn:hover {
-    background: #1976D2;
-}
-
-#zoom-level {
-    min-width: 60px;
-    text-align: center;
-    font-family: monospace;
-    font-size: 14px;
-} */
-
 /* 確保按鈕始終可見 */
 .panel-toggle {
     visibility: visible !important;
@@ -551,20 +531,25 @@ h3 {
 .class-item, .image-item {
     display: flex;
     align-items: center;
-    padding: 8px;
+    height: 36px;
+    padding: 0 8px;
     margin: 5px 0;
     background: white;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
     gap: 8px;
+    box-sizing: border-box;
 }
 
 /* 刪除按鈕容器 */
 .class-actions, .image-actions {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    width: 24px;
+    height: 100%;
 }
 
 /* 刪除按鈕樣式 */
@@ -576,6 +561,48 @@ h3 {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    margin: 0;
+}
+
+/* 類別和圖片資訊容器 */
+.class-info, .image-info {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* 類別和圖片名稱 */
+.class-name, .image-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    line-height: 24px;
+    cursor: pointer;
+}
+
+/* 選中狀態 */
+.class-item.selected, .image-item.selected {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+    padding-left: 4px;
+}
+
+/* 確保選中時的對齊 */
+.class-item.selected .class-info,
+.image-item.selected .image-info {
+    padding-left: 0;
+}
+
+/* 修改點擊區域 */
+.class-item > *:not(.action-btn):not(.color-picker),
+.image-item > *:not(.action-btn) {
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 /* 顏色選擇器樣式 */
@@ -593,7 +620,9 @@ h3 {
 .class-info, .image-info {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
 }
 
 /* 類別和圖片名稱 */
@@ -602,6 +631,8 @@ h3 {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: left;
+    line-height: 24px;
 }
 
 /* 選中狀態 */
@@ -609,6 +640,12 @@ h3 {
     background: #e3f2fd;
     border-left: 4px solid #1976d2;
     padding-left: 4px;
+}
+
+/* 確保選中時的對齊 */
+.class-item.selected .class-info,
+.image-item.selected .image-info {
+    padding-left: 0;
 }
 
 /* 懸停提示 */
@@ -682,7 +719,7 @@ h3 {
     font-size: 14px;
 }
 
-/* 修改類別名稱的對齊方式 */
+/* 修改類別名稱的齊方式 */
 .class-info {
     flex: 1;
     min-width: 0;
@@ -708,4 +745,378 @@ h3 {
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
+}
+
+/* 修改項目的樣式 */
+.image-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 8px;
+}
+
+.image-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.image-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    padding-left: 4px;
+}
+
+/* 修改圖片列表容器的樣式 */
+.image-list {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 4px;
+    /* margin-right: 4px; */
+    margin: 5px 10px;
+    /* margin-bottom: 20px; */
+}
+
+/* 自定義捲動條樣式 */
+.image-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.image-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.image-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.image-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 統一捲動條樣式 */
+.class-list::-webkit-scrollbar,
+.image-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.class-list::-webkit-scrollbar-track,
+.image-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.class-list::-webkit-scrollbar-thumb,
+.image-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.class-list::-webkit-scrollbar-thumb:hover,
+.image-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 移除之前的最大高度限制 */
+.panel-section,
+.class-list,
+.image-list {
+    max-height: none;
+}
+
+/* 調整按鈕和標題的間距 */
+.panel-section h3 {
+    margin: 0;
+    padding: 5px 10px;
+}
+
+/* 修改按鈕顏色樣式 */
+#import-classes,
+#import-annotations {
+    background-color: #9C27B0; /* 紫色 */
+}
+
+#import-classes:hover,
+#import-annotations:hover {
+    background-color: #7B1FA2; /* 深紫色 */
+}
+
+#clear-state {
+    background-color: #f44336; /* 紅色 */
+}
+
+#clear-state:hover {
+    background-color: #d32f2f; /* 深紅色 */
+}
+
+/* 類別按鈕容器 */
+.class-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+/* 類別按鈕樣式 */
+.class-buttons .action-btn {
+    flex: 1;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+/* 按鈕顏色 */
+.class-buttons .add-btn {
+    background-color: #4CAF50;
+}
+
+.class-buttons .import-btn {
+    background-color: #9C27B0;
+}
+
+.class-buttons .save-btn {
+    background-color: #2196F3;
+}
+
+/* 懸停效果 */
+.class-buttons .add-btn:hover {
+    background-color: #388E3C;
+}
+
+.class-buttons .import-btn:hover {
+    background-color: #7B1FA2;
+}
+
+.class-buttons .save-btn:hover {
+    background-color: #1976D2;
+}
+
+/* 圖示大小 */
+.class-buttons .action-btn i {
+    font-size: 18px;
+}
+
+/* 修改左側面板的按鈕群組樣式 */
+.annotation-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+/* 標註按鈕樣式 */
+.annotation-buttons .action-btn {
+    flex: 1;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+/* 按鈕顏色 */
+.annotation-buttons .import-btn {
+    background-color: #9C27B0;
+}
+
+.annotation-buttons .save-btn {
+    background-color: #2196F3;
+}
+
+/* 懸停效果 */
+.annotation-buttons .import-btn:hover {
+    background-color: #7B1FA2;
+}
+
+.annotation-buttons .save-btn:hover {
+    background-color: #1976D2;
+}
+
+/* 系統功能區塊的清除按鈕 */
+#clear-state {
+    width: 100%;
+    height: 36px;
+    background-color: #f44336;
+    margin-bottom: 10px;
+}
+
+#clear-state:hover {
+    background-color: #d32f2f;
+}
+
+/* 圖示大小 */
+.action-btn i {
+    font-size: 18px;
+}
+
+
+/* 系統功能區塊樣式 */
+.system-section {
+    flex: 0 0 auto;
+    padding: 0;
+    margin-bottom: 10px;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.system-section h3 {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 16px;
+}
+
+/* 系統功能按鈕容器 */
+.system-buttons,
+.annotation-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 0 10px 5px 10px;
+    padding: 0;
+}
+
+/* 系統功能按鈕 */
+.system-buttons .action-btn,
+.annotation-buttons .action-btn {
+    flex: 1;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+/* 清除按鈕 */
+#clear-state {
+    width: calc(100% - 20px);
+    height: 36px;
+    margin: 0 10px 5px 10px;
+}
+
+/* 加入圖片按鈕樣式 */
+#addImagesBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 10px;
+    font-size: 14px;
+    width: calc(100% - 20px);
+}
+
+#addImagesBtn i {
+    font-size: 16px;
+}
+
+.help-content {
+    margin: 20px 0;
+    line-height: 1.6;
+}
+
+.help-content p {
+    margin: 10px 0;
+}
+
+/* 確保 textarea 在 panel-section 中正確顯示且不會溢出 */
+.panel-section textarea {
+    flex: 1;
+    min-height: 100px;
+    max-height: calc(100% - 100px);
+    resize: none;
+    overflow-y: auto;
+}
+
+/* 調整按鈕群組的間距 */
+.system-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 0;
+}
+
+/* 調整標註按鈕群組的間距 */
+.annotation-buttons {
+    margin-bottom: 8px;
+}
+
+/* 系統功能區塊樣式 */
+.system-section {
+    flex: 0 0 auto;
+    padding: 10px;
+    margin-bottom: 10px;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.system-section h3 {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 16px;
+}
+
+/* 所有按鈕群組的共同樣式 */
+.system-buttons,
+.annotation-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 0 10px;
+    padding: 0;
+}
+
+/* 所有功能按鈕的基本樣式 */
+.action-btn {
+    height: 36px;
+    width: 36px; /* 統一寬度 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* 系統功能按鈕 */
+.system-buttons .action-btn,
+.annotation-buttons .action-btn {
+    flex: 1;
+    margin: 10px 0;
+}
+
+/* 清除按鈕容器 */
+.clear-button-container {
+    padding: 0 10px;
+    margin-top: 10px; /* 與上方按鈕的間距 */
+}
+
+/* 清除按鈕 */
+#clear-state {
+    width: 100%;
+    margin: 10px 0;
+}
+
+/* 切換按鈕樣式 */
+.toggle-btn {
+    background-color: #FF9800;
+}
+
+.toggle-btn:hover {
+    background-color: #F57C00;
 }
