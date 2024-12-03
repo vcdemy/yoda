@@ -3,14 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLabel: 免費YOLO標註工具</title>
+    <title>YOLabel: YOLO Labeler</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="main-header">
-        <h1>YOLabel: 免費YOLO標註工具</h1>
+        <h1>YOLabel: YOLO Labeler</h1>
+        <div class="social-links">
+            <a href="https://github.com/vcdemy/yolabel" target="_blank" class="social-link">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://www.facebook.com/vcdemy" target="_blank" class="social-link">
+                <i class="fab fa-facebook"></i>
+            </a>
+        </div>
     </header>
 
     <div class="main-container">
@@ -19,17 +27,41 @@
             <button class="panel-toggle left-toggle">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <h3>標註資料</h3>
-            <div id="controls">
-                <button id="import-classes" class="action-btn">匯入類別</button>
-                <input type="file" id="import-classes-input" accept=".txt" style="display: none;">
-                <button id="import-annotations" class="action-btn">匯入標註</button>
-                <input type="file" id="import-input" accept=".txt,.zip" style="display: none;" multiple>
-                <button id="download-annotations" class="action-btn">下載當前標註</button>
-                <button id="download-all-annotations" class="action-btn">下載全部標註</button>
-                <button id="download-classes" class="action-btn">下載類別檔</button>
+            
+            <!-- 系統功能區塊 -->
+            <div class="panel-section system-section">
+                <h3>系統功能</h3>
+                <div class="system-buttons">
+                    <button id="clear-state" class="action-btn delete-btn" title="清除所有資料">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button id="toggle-label" class="action-btn toggle-btn" title="切換標註顯示 (名稱/ID)">
+                        <i class="fas fa-tag"></i>
+                    </button>
+                    <button id="help" class="action-btn help-btn" title="使用說明">
+                        <i class="fas fa-circle-question"></i>
+                    </button>
+                </div>
             </div>
-            <textarea id="annotations" rows="10" readonly></textarea>
+
+            <!-- 標註資料區塊 -->
+            <div class="panel-section system-section">
+                <h3>標註資料</h3>
+                <!-- 標註按鈕群組 -->
+                <div class="annotation-buttons">
+                    <button id="import-annotations" class="action-btn import-btn" title="匯入標註">
+                        <i class="fas fa-file-import"></i>
+                    </button>
+                    <button id="download-annotations" class="action-btn save-btn" title="下載當前標註">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button id="download-all-annotations" class="action-btn save-btn" title="下載全部標註">
+                        <i class="fas fa-cloud-download-alt"></i>
+                    </button>
+                </div>
+                <input type="file" id="import-input" accept=".txt,.zip" style="display: none;" multiple>
+                <textarea id="annotations" rows="10" readonly></textarea>
+            </div>
         </div>
 
         <!-- 中間面板：圖片編輯 -->
@@ -47,60 +79,33 @@
             <!-- 類別管理 -->
             <div class="panel-section">
                 <h3>類別管理</h3>
-                <button id="addClassBtn" class="action-btn add-btn" style="width: 100%; margin-bottom: 10px;">
-                    添加類別
-                </button>
-                <!-- 修改類別添加對話框 -->
-                <div id="addClassDialog" class="dialog" style="display: none;">
-                    <div class="dialog-content">
-                        <div class="class-input">
-                            <input type="text" id="newClassName" placeholder="輸入類別名稱">
-                            <input type="color" id="newClassColor" value="#ff0000">
-                            <button onclick="addClassConfirm()" class="action-btn add-btn">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button onclick="closeAddClassDialog()" class="action-btn delete-btn">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div class="class-buttons">
+                    <button id="addClassBtn" class="action-btn add-btn" title="新增類別">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button id="import-classes" class="action-btn import-btn" title="匯入類別">
+                        <i class="fas fa-file-import"></i>
+                    </button>
+                    <button id="download-classes" class="action-btn save-btn" title="儲存類別">
+                        <i class="fas fa-save"></i>
+                    </button>
                 </div>
+                <input type="file" id="import-classes-input" accept=".txt" style="display: none;">
+                <!-- 類別列表 -->
                 <div id="classList" class="class-list">
-                    <!-- 類別項目的模板 -->
-                    <!-- <div class="class-item">
-                        <div class="class-actions">
-                            <button class="action-btn delete-btn">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="class-info">
-                            <span class="color-dot"></span>
-                            <span class="class-name"></span>
-                        </div>
-                        <input type="color" class="color-picker">
-                    </div> -->
+                    <!-- 類別項目會在這裡動態生成 -->
                 </div>
             </div>
 
             <!-- 檔案管理 -->
             <div class="panel-section">
                 <h3>檔案管理</h3>
-                <button id="addImagesBtn" class="action-btn load-btn" style="width: 100%; margin-bottom: 10px;">
+                <button id="addImagesBtn" class="action-btn load-btn">
+                    <i class="fas fa-images"></i>
                     加入圖片
                 </button>
                 <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
                 <div id="imageList" class="image-list">
-                    <!-- 圖片項目的模板 -->
-                    <!-- <div class="image-item">
-                        <div class="image-actions">
-                            <button class="action-btn delete-btn">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="image-info">
-                            <span class="image-name"></span>
-                        </div>
-                    </div> -->
                 </div>
             </div>
         </div>
@@ -110,5 +115,35 @@
 
     <script src="script.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+    <!-- 在 body 結尾前添加對話框 -->
+    <div id="addClassDialog" class="dialog" style="display: none;">
+        <div class="dialog-content">
+            <div class="class-input">
+                <input type="text" id="newClassName" placeholder="輸入類別名稱">
+                <input type="color" id="newClassColor" value="#ff0000">
+                <button onclick="addClassConfirm()" class="action-btn add-btn">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button onclick="closeAddClassDialog()" class="action-btn delete-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="helpDialog" class="dialog" style="display: none;">
+        <div class="dialog-content">
+            <h3>使用說明</h3>
+            <div class="help-content">
+                <p>1. 先匯入或新增類別</p>
+                <p>2. 載入圖片</p>
+                <p>3. 選擇要標註的類別</p>
+                <p>4. 在圖片上拖曳來建立標註框</p>
+                <p>5. 點擊標註框右上角的 X 可刪除標註</p>
+            </div>
+            <button onclick="closeHelpDialog()" class="action-btn">關閉</button>
+        </div>
+    </div>
 </body>
 </html>
